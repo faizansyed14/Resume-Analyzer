@@ -1,0 +1,936 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Dashboard Header -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold text-blue-600">Resume Analyzer Dashboard</h1>
+        <p class="text-gray-600">Upload resumes and job descriptions to get matching insights</p>
+    </div>
+
+    <!-- Upload Sections -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Resume Upload -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-blue-600">
+                <i class="fas fa-file-upload mr-2"></i>Upload Resumes
+            </h2>
+            <div id="resume-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
+                <i class="fas fa-file-pdf text-5xl text-blue-400 mb-3"></i>
+                <p class="text-gray-600 mb-4">Drag & drop resumes (PDF/DOCX) or click to browse</p>
+                <button id="resume-select-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-upload mr-2"></i>Select Files
+                </button>
+                <input type="file" id="resume-file" accept=".pdf,.docx" class="hidden" multiple>
+            </div>
+            <div id="resume-filename" class="mt-2 text-sm text-gray-600"></div>
+            <div class="flex space-x-3 mt-4">
+                <button id="uploadResumeBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Resumes
+                </button>
+                <button id="clearResumeBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-trash mr-2"></i>Clear
+                </button>
+            </div>
+            <div id="resume-result-container" class="mt-6 hidden">
+                <!-- Resume results will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Job Upload -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-blue-600">
+                <i class="fas fa-file-upload mr-2"></i>Upload Job Description
+            </h2>
+            <div id="job-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
+                <i class="fas fa-file-alt text-5xl text-blue-400 mb-3"></i>
+                <p class="text-gray-600 mb-4">Drag & drop job description (PDF/DOCX) or click to browse</p>
+                <button id="job-select-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-upload mr-2"></i>Select File
+                </button>
+                <input type="file" id="job-file" accept=".pdf,.docx" class="hidden">
+            </div>
+            <div id="job-filename" class="mt-2 text-sm text-gray-600"></div>
+            <div class="flex space-x-3 mt-4">
+                <button id="uploadJobBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Job
+                </button>
+                <button id="clearJobBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-trash mr-2"></i>Clear
+                </button>
+            </div>
+            <div id="job-result-container" class="mt-6 hidden">
+                <!-- Job results will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Matching Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4 text-blue-600">
+            <i class="fas fa-handshake mr-2"></i>Matching & Analysis
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Selection Form -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold">Resume & Job Selection</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Resume ID:</label>
+                    <input type="text" id="match-resume-id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter Resume ID">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Job ID:</label>
+                    <input type="text" id="match-job-id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter Job ID">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button id="matchSpecificBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">
+                        <i class="fas fa-link mr-2"></i>Match Specific
+                    </button>
+                    <button id="findTopResumesBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">
+                        <i class="fas fa-search mr-2"></i>Find Top Candidates
+                    </button>
+                </div>
+                
+                <button id="generateQuestionsBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-question-circle mr-2"></i>Generate Interview Questions
+                </button>
+            </div>
+            
+            <!-- Results Display -->
+            <div id="match-results-container">
+                <div id="match-result-container" class="hidden">
+                    <!-- Matching results will be loaded here -->
+                </div>
+                
+                <div id="questions-result-container" class="hidden">
+                    <!-- Interview questions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// DOM Elements
+const resumeUpload = document.getElementById('resume-upload');
+const resumeFile = document.getElementById('resume-file');
+const resumeSelectBtn = document.getElementById('resume-select-btn');
+const resumeFilename = document.getElementById('resume-filename');
+const uploadResumeBtn = document.getElementById('uploadResumeBtn');
+const clearResumeBtn = document.getElementById('clearResumeBtn');
+const resumeResultContainer = document.getElementById('resume-result-container');
+
+const jobUpload = document.getElementById('job-upload');
+const jobFile = document.getElementById('job-file');
+const jobSelectBtn = document.getElementById('job-select-btn');
+const jobFilename = document.getElementById('job-filename');
+const uploadJobBtn = document.getElementById('uploadJobBtn');
+const clearJobBtn = document.getElementById('clearJobBtn');
+const jobResultContainer = document.getElementById('job-result-container');
+
+const matchResumeId = document.getElementById('match-resume-id');
+const matchJobId = document.getElementById('match-job-id');
+const matchSpecificBtn = document.getElementById('matchSpecificBtn');
+const findTopResumesBtn = document.getElementById('findTopResumesBtn');
+const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
+const matchResultContainer = document.getElementById('match-result-container');
+const questionsResultContainer = document.getElementById('questions-result-container');
+
+// Event Listeners
+resumeSelectBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    resumeFile.click();
+});
+
+jobSelectBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    jobFile.click();
+});
+
+// File change handlers
+resumeFile.addEventListener('change', handleResumeFileChange);
+jobFile.addEventListener('change', handleJobFileChange);
+
+// Main action buttons
+uploadResumeBtn.addEventListener('click', uploadResumes);
+clearResumeBtn.addEventListener('click', clearResumeResults);
+uploadJobBtn.addEventListener('click', uploadJob);
+clearJobBtn.addEventListener('click', clearJobResults);
+matchSpecificBtn.addEventListener('click', matchResumeToJob);
+findTopResumesBtn.addEventListener('click', findTopResumes);
+generateQuestionsBtn.addEventListener('click', generateInterviewQuestions);
+
+// Drag and drop functionality
+setupDragAndDrop(resumeUpload, resumeFile, resumeFilename);
+setupDragAndDrop(jobUpload, jobFile, jobFilename);
+
+// Functions
+function handleResumeFileChange(e) {
+    if (e.target.files.length > 0) {
+        const fileNames = Array.from(e.target.files).map(file => file.name).join(', ');
+        resumeFilename.textContent = `Selected: ${fileNames}`;
+        resumeFilename.classList.add('text-blue-500');
+    }
+}
+
+function handleJobFileChange(e) {
+    if (e.target.files.length > 0) {
+        jobFilename.textContent = `Selected: ${e.target.files[0].name}`;
+        jobFilename.classList.add('text-blue-500');
+    }
+}
+
+function setupDragAndDrop(area, fileInput, filenameDisplay) {
+    area.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        area.classList.add('border-blue-400', 'bg-blue-50');
+    });
+    
+    area.addEventListener('dragleave', () => {
+        area.classList.remove('border-blue-400', 'bg-blue-50');
+    });
+    
+    area.addEventListener('drop', (e) => {
+        e.preventDefault();
+        area.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        if (e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files);
+            const validFiles = files.filter(file => 
+                file.name.toLowerCase().endsWith('.pdf') || 
+                file.name.toLowerCase().endsWith('.docx')
+            );
+            
+            if (validFiles.length > 0) {
+                const dataTransfer = new DataTransfer();
+                validFiles.forEach(file => dataTransfer.items.add(file));
+                fileInput.files = dataTransfer.files;
+                
+                if (fileInput === resumeFile) {
+                    const fileNames = validFiles.map(f => f.name).join(', ');
+                    resumeFilename.textContent = `Selected: ${fileNames}`;
+                    resumeFilename.classList.add('text-blue-500');
+                } else {
+                    jobFilename.textContent = `Selected: ${validFiles[0].name}`;
+                    jobFilename.classList.add('text-blue-500');
+                }
+            } else {
+                showError(area, 'Please upload PDF or DOCX files only');
+            }
+        }
+    });
+}
+
+async function uploadResumes() {
+    if (!resumeFile.files.length) {
+        showError(resumeFilename, 'Please select at least one resume file');
+        return;
+    }
+    
+    showLoading();
+    
+    const formData = new FormData();
+    for (const file of resumeFile.files) {
+        formData.append('file', file);
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Display the first resume in the batch
+        if (data.results && data.results.length > 0) {
+            displayResumeDetails(data.results[0]);
+        } else {
+            throw new Error('No resumes processed');
+        }
+        
+    } catch (error) {
+        showError(resumeResultContainer, `Error: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayResumeDetails(resumeData) {
+  // Ensure we have a valid resume ID
+  const resumeId = resumeData.resume_id || 'N/A';
+  document.getElementById('resume-id').textContent = resumeId;
+  
+  // Extract entities with fallbacks
+  const entities = resumeData.extracted_entities || {};
+  const name = typeof entities.name === 'string' ? entities.name : 'N/A';
+  const email = typeof entities.email === 'string' ? entities.email : 'N/A';
+  const phone = typeof entities.phone === 'string' ? entities.phone : 'N/A';
+  
+  // Update basic info
+  document.getElementById('resume-name').textContent = name;
+  document.getElementById('resume-email').textContent = email;
+  document.getElementById('resume-phone').textContent = phone;
+  
+  // Helper function to safely display content
+  const safeDisplay = (content, containerId, isList = false) => {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      if (!content || (Array.isArray(content) && content.length === 0)) {
+          container.innerHTML = '<div class="text-gray-500">No data available</div>';
+          return;
+      }
+      
+      if (isList) {
+          if (Array.isArray(content)) {
+              content.forEach(item => {
+                  const itemEl = document.createElement('div');
+                  itemEl.className = 'py-1 border-b border-gray-100 last:border-0';
+                  itemEl.textContent = typeof item === 'string' ? item : JSON.stringify(item);
+                  container.appendChild(itemEl);
+              });
+          } else {
+              container.textContent = typeof content === 'string' ? content : JSON.stringify(content);
+          }
+      } else {
+          container.textContent = typeof content === 'string' ? content : JSON.stringify(content);
+      }
+  };
+
+  // Summary/Objective
+  safeDisplay(entities.summary_objective, 'resume-summary');
+
+  // Skills (as tags)
+  const skillsContainer = document.getElementById('resume-skills');
+  skillsContainer.innerHTML = '';
+  if (entities.skills && entities.skills.length) {
+      entities.skills.forEach(skill => {
+          if (!skill) return;
+          const skillEl = document.createElement('span');
+          skillEl.className = 'inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2';
+          skillEl.textContent = typeof skill === 'string' ? skill : 
+                               (skill.name || JSON.stringify(skill));
+          skillsContainer.appendChild(skillEl);
+      });
+  } else {
+      skillsContainer.innerHTML = '<div class="text-gray-500">No skills listed</div>';
+  }
+
+  // Experience (handles both array and object formats)
+  const experienceContainer = document.getElementById('resume-experience');
+  experienceContainer.innerHTML = '';
+  
+  if (entities.experience) {
+      // Normalize to array
+      const experiences = Array.isArray(entities.experience) ? 
+                        entities.experience : [entities.experience];
+      
+      experiences.forEach((exp, index) => {
+          if (!exp) return;
+          
+          const expEl = document.createElement('div');
+          expEl.className = 'mb-4 pb-4 border-b border-gray-200 last:border-0';
+          
+          let expHtml = '';
+          
+          if (typeof exp === 'string') {
+              expHtml = `<p>${exp}</p>`;
+          } else {
+              // Handle object format
+              expHtml += `<h3 class="font-semibold text-lg">${exp.title || 'Position'}</h3>`;
+              
+              if (exp.company) {
+                  expHtml += `<p class="text-blue-600">${exp.company}</p>`;
+              }
+              
+              if (exp.duration || exp.location) {
+                  expHtml += `<p class="text-sm text-gray-500">`;
+                  if (exp.duration) expHtml += `${exp.duration}`;
+                  if (exp.location) expHtml += ` ${exp.duration ? '|' : ''} ${exp.location}`;
+                  expHtml += `</p>`;
+              }
+              
+              if (exp.description) {
+                  expHtml += `<p class="mt-2">${exp.description}</p>`;
+              }
+              
+              if (exp.responsibilities && exp.responsibilities.length) {
+                  expHtml += '<ul class="list-disc pl-5 mt-2">';
+                  exp.responsibilities.forEach(resp => {
+                      expHtml += `<li>${typeof resp === 'string' ? resp : JSON.stringify(resp)}</li>`;
+                  });
+                  expHtml += '</ul>';
+              }
+          }
+          
+          expEl.innerHTML = expHtml;
+          experienceContainer.appendChild(expEl);
+      });
+  } else {
+      experienceContainer.innerHTML = '<div class="text-gray-500">No experience listed</div>';
+  }
+
+  // Education
+  const educationContainer = document.getElementById('resume-education');
+  educationContainer.innerHTML = '';
+  
+  if (entities.education) {
+      // Normalize to array
+      const educations = Array.isArray(entities.education) ? 
+                       entities.education : [entities.education];
+      
+      educations.forEach(edu => {
+          if (!edu) return;
+          
+          const eduEl = document.createElement('div');
+          eduEl.className = 'mb-3 pb-3 border-b border-gray-100 last:border-0';
+          
+          if (typeof edu === 'string') {
+              eduEl.textContent = edu;
+          } else {
+              let eduHtml = '';
+              if (edu.degree) eduHtml += `<h3 class="font-semibold">${edu.degree}</h3>`;
+              if (edu.institution) eduHtml += `<p>${edu.institution}</p>`;
+              if (edu.field) eduHtml += `<p class="text-sm">Field: ${edu.field}</p>`;
+              if (edu.duration) eduHtml += `<p class="text-sm text-gray-500">${edu.duration}</p>`;
+              if (edu.description) eduHtml += `<p class="mt-1">${edu.description}</p>`;
+              
+              eduEl.innerHTML = eduHtml;
+          }
+          
+          educationContainer.appendChild(eduEl);
+      });
+  } else {
+      educationContainer.innerHTML = '<div class="text-gray-500">No education listed</div>';
+  }
+
+  // Certifications
+  const certContainer = document.getElementById('resume-certifications');
+  certContainer.innerHTML = '';
+  
+  if (entities.certifications) {
+      // Normalize to array
+      const certs = Array.isArray(entities.certifications) ? 
+                   entities.certifications : [entities.certifications];
+      
+      certs.forEach(cert => {
+          if (!cert) return;
+          
+          const certEl = document.createElement('div');
+          certEl.className = 'mb-2';
+          certEl.textContent = typeof cert === 'string' ? cert : 
+                              (cert.name || JSON.stringify(cert));
+          certContainer.appendChild(certEl);
+      });
+  } else {
+      certContainer.innerHTML = '<div class="text-gray-500">No certifications listed</div>';
+  }
+
+  // Projects
+  const projectsContainer = document.getElementById('resume-projects');
+  projectsContainer.innerHTML = '';
+  
+  if (entities.projects) {
+      // Normalize to array
+      const projects = Array.isArray(entities.projects) ? 
+                      entities.projects : [entities.projects];
+      
+      projects.forEach(proj => {
+          if (!proj) return;
+          
+          const projEl = document.createElement('div');
+          projEl.className = 'mb-4 pb-4 border-b border-gray-100 last:border-0';
+          
+          if (typeof proj === 'string') {
+              projEl.textContent = proj;
+          } else {
+              let projHtml = '';
+              if (proj.name) projHtml += `<h3 class="font-semibold">${proj.name}</h3>`;
+              if (proj.description) projHtml += `<p>${proj.description}</p>`;
+              if (proj.technologies) {
+                  projHtml += '<div class="mt-2 flex flex-wrap gap-2">';
+                  const techs = Array.isArray(proj.technologies) ? proj.technologies : [proj.technologies];
+                  techs.forEach(tech => {
+                      projHtml += `<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">${tech}</span>`;
+                  });
+                  projHtml += '</div>';
+              }
+              
+              projEl.innerHTML = projHtml;
+          }
+          
+          projectsContainer.appendChild(projEl);
+      });
+  } else {
+      projectsContainer.innerHTML = '<div class="text-gray-500">No projects listed</div>';
+  }
+
+  // Token Usage
+  const tokenUsage = resumeData.llm_token_usage || {};
+  document.getElementById('resume-prompt-tokens').textContent = tokenUsage.prompt_tokens || '0';
+  document.getElementById('resume-completion-tokens').textContent = tokenUsage.completion_tokens || '0';
+  document.getElementById('resume-total-tokens').textContent = tokenUsage.total_tokens || '0';
+
+  // Show the container
+  resumeResultContainer.style.display = 'block';
+  matchResumeId.value = resumeId;
+}
+
+async function uploadJob() {
+    if (!jobFile.files.length) {
+        showError(jobFilename, 'Please select a job description file');
+        return;
+    }
+    
+    showLoading();
+    
+    const formData = new FormData();
+    formData.append('file', jobFile.files[0]);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/jobs/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        displayJobDetails(data);
+        
+    } catch (error) {
+        showError(jobResultContainer, `Error: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayJobDetails(jobData) {
+    const jobId = jobData.job_id;
+    const entities = jobData.extracted_entities || {};
+    
+    const html = `
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <h3 class="font-semibold">Job ID:</h3>
+                    <p>${jobId}</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Job Title:</h3>
+                    <p>${entities.job_title || 'N/A'}</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Company:</h3>
+                    <p>${entities.company || 'N/A'}</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Location:</h3>
+                    <p>${entities.location || 'N/A'}</p>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Job Summary</h3>
+                <div class="bg-gray-50 p-4 rounded">
+                    ${entities.summary_objective || 'No summary available'}
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Required Skills</h3>
+                <div class="flex flex-wrap gap-2">
+                    ${entities.skills ? entities.skills.map(skill => 
+                        `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">${skill}</span>`
+                    ).join('') : 'No skills listed'}
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Experience Requirements</h3>
+                ${entities.experience ? entities.experience.map(exp => `
+                    <div class="mb-4 pb-4 border-b border-gray-200">
+                        ${typeof exp === 'string' ? exp : `
+                            <h4 class="font-semibold">${exp.title || 'Experience'}</h4>
+                            <p class="text-gray-600">${exp.duration || ''}</p>
+                            <p>${exp.description || ''}</p>
+                        `}
+                    </div>
+                `).join('') : '<p>No experience requirements listed</p>'}
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">Education Requirements</h3>
+                ${entities.education ? entities.education.map(edu => `
+                    <div class="mb-3">
+                        ${typeof edu === 'string' ? edu : `
+                            <p class="font-semibold">${edu.degree || ''}</p>
+                            <p class="text-gray-600">${edu.field ? 'Field: ' + edu.field : ''} ${edu.institution ? ' | ' + edu.institution : ''}</p>
+                        `}
+                    </div>
+                `).join('') : '<p>No education requirements listed</p>'}
+            </div>
+            
+            ${jobData.llm_token_usage ? `
+                <div class="text-sm text-gray-500">
+                    <h4 class="font-semibold">Token Usage:</h4>
+                    <p>Prompt: ${jobData.llm_token_usage.prompt_tokens || 0}</p>
+                    <p>Completion: ${jobData.llm_token_usage.completion_tokens || 0}</p>
+                    <p>Total: ${jobData.llm_token_usage.total_tokens || 0}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    jobResultContainer.innerHTML = html;
+    jobResultContainer.classList.remove('hidden');
+    matchJobId.value = jobId;
+}
+
+async function findTopResumes() {
+    const jobId = matchJobId.value.trim();
+    if (!jobId) {
+        showError(matchResultContainer, 'Please enter a Job ID');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/jobs/match-resumes/${jobId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        displayTopResumes(data.top_resume_matches);
+        
+    } catch (error) {
+        showError(matchResultContainer, `Error: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayTopResumes(topResumes) {
+    questionsResultContainer.classList.add('hidden');
+    
+    const html = `
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Top 5 Candidates</h2>
+            
+            <div class="space-y-4">
+                ${topResumes.map((resume, index) => `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-semibold">${index + 1}. ${resume.candidate_name}</h3>
+                                <p class="text-sm text-gray-600">Resume ID: ${resume.resume_id}</p>
+                            </div>
+                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                ${(resume.overall_score * 100).toFixed(1)}% Match
+                            </span>
+                        </div>
+                        
+                        <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div>
+                                <span class="text-gray-500">Skills:</span>
+                                <span class="font-semibold">${(resume.skills_score * 100).toFixed(1)}%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Experience:</span>
+                                <span class="font-semibold">${(resume.experience_score * 100).toFixed(1)}%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Education:</span>
+                                <span class="font-semibold">${(resume.education_score * 100).toFixed(1)}%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Domain:</span>
+                                <span class="font-semibold">${(resume.domain_alignment * 100).toFixed(1)}%</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="matchSpecificResume('${resume.resume_id}', '${matchJobId.value}')" 
+                                class="mt-3 text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                            <i class="fas fa-search mr-1"></i>View Detailed Match
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    matchResultContainer.innerHTML = html;
+    matchResultContainer.classList.remove('hidden');
+}
+
+async function matchSpecificResume(resumeId, jobId) {
+    showLoading();
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        displayMatchDetails(data);
+        
+    } catch (error) {
+        showError(matchResultContainer, `Error: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayMatchDetails(matchData) {
+  const details = matchData.match_details;
+  const scores = details.scores;
+  const tokenUsage = details.metadata?.llm_token_usage || {};
+  
+  const html = `
+      <div class="match-results-container">
+          <!-- Scores Section -->
+          <div class="scores-section">
+              <h3>Matching Scores</h3>
+              <div class="score-cards">
+                  <div class="score-card skills">
+                      <span class="score-label">Skills Match</span>
+                      <span class="score-value">${(scores.skills * 100).toFixed(1)}%</span>
+                      <div class="score-bar" style="width: ${scores.skills * 100}%"></div>
+                  </div>
+                  <div class="score-card experience">
+                      <span class="score-label">Experience</span>
+                      <span class="score-value">${(scores.experience * 100).toFixed(1)}%</span>
+                      <div class="score-bar" style="width: ${scores.experience * 100}%"></div>
+                  </div>
+                  <div class="score-card education">
+                      <span class="score-label">Education</span>
+                      <span class="score-value">${(scores.education * 100).toFixed(1)}%</span>
+                      <div class="score-bar" style="width: ${scores.education * 100}%"></div>
+                  </div>
+                  <div class="score-card overall">
+                      <span class="score-label">Overall Match</span>
+                      <span class="score-value">${(scores.overall * 100).toFixed(1)}%</span>
+                      <div class="score-bar" style="width: ${scores.overall * 100}%"></div>
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Matched Skills -->
+          <div class="matched-skills-section">
+              <h3>Matched Skills (LLM-Identified)</h3>
+              <div class="skills-container">
+                  ${details.matched_skills.map(skill => `
+                      <div class="skill-tag">
+                          ${skill}
+                      </div>
+                  `).join('')}
+              </div>
+          </div>
+          
+          <!-- Skill Match Details -->
+          <div class="skill-details-section">
+              <h3>Detailed Skill Matching</h3>
+              <div class="skill-matches">
+                  ${details.skill_match_details.map(match => `
+                      <div class="skill-match">
+                          <div class="job-skill">Job requires: ${match.job_skill}</div>
+                          <div class="match-confidence">
+                              Confidence: ${(match.confidence * 100).toFixed(1)}% 
+                              (${match.match_type})
+                          </div>
+                      </div>
+                  `).join('')}
+              </div>
+          </div>
+          
+          <!-- Token Usage -->
+          <div class="token-usage-section">
+              <h3>LLM Token Usage</h3>
+              <div class="token-usage">
+                  <div>Prompt Tokens: ${tokenUsage.prompt_tokens || 'N/A'}</div>
+                  <div>Completion Tokens: ${tokenUsage.completion_tokens || 'N/A'}</div>
+                  <div>Total Tokens: ${tokenUsage.total_tokens || 'N/A'}</div>
+              </div>
+          </div>
+          
+          <!-- Analysis -->
+          <div class="analysis-section">
+              <h3>Analysis</h3>
+              <p>${details.match_analysis || 'No analysis available'}</p>
+          </div>
+      </div>
+  `;
+  
+  document.getElementById('match-result-container').innerHTML = html;
+  document.getElementById('match-result-container').style.display = 'block';
+}
+async function matchResumeToJob() {
+  const resumeId = matchResumeId.value.trim();
+  const jobId = matchJobId.value.trim();
+  
+  console.log("Attempting to match:", { resumeId, jobId }); // Debug
+  
+  showLoading();
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
+    console.log("Raw response:", response); // Debug
+    
+    const data = await response.json();
+    console.log("Parsed data:", data); // Debug
+    
+    if (!response.ok) throw new Error(data.error || "Matching failed");
+    
+    displayMatchDetails(data);
+    
+  } catch (error) {
+    console.error("Match error:", error); // Debug
+    showError(matchResultContainer, error.message);
+  } finally {
+    hideLoading();
+  }
+}
+async function generateInterviewQuestions() {
+    const resumeId = matchResumeId.value.trim();
+    const jobId = matchJobId.value.trim();
+    
+    if (!resumeId || !jobId) {
+        showError(questionsResultContainer, 'Please enter both Resume ID and Job ID');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}/generate-interview-questions/${jobId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        displayInterviewQuestions(data);
+        
+    } catch (error) {
+        showError(questionsResultContainer, `Error: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayInterviewQuestions(questionsData) {
+  matchResultContainer.classList.add('hidden');
+  
+  const techQuestions = questionsData.interview_questions?.technical_questions || [];
+  const behaviorQuestions = questionsData.interview_questions?.behavioral_questions || [];
+  const tokenUsage = questionsData.token_usage || {};
+  
+  const html = `
+      <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold mb-4">Interview Questions</h2>
+          
+          <div class="mb-6">
+              <h3 class="text-lg font-semibold mb-2">Technical Questions</h3>
+              <div class="space-y-3">
+                  ${techQuestions.map((q, i) => `
+                      <div class="border-l-4 border-blue-400 pl-3 py-1">
+                          <div class="font-semibold">${i + 1}. ${typeof q === 'string' ? q : JSON.stringify(q)}</div>
+                      </div>
+                  `).join('')}
+                  ${techQuestions.length === 0 ? '<p>No technical questions generated</p>' : ''}
+              </div>
+          </div>
+          
+          <div class="mb-6">
+              <h3 class="text-lg font-semibold mb-2">Behavioral Questions</h3>
+              <div class="space-y-3">
+                  ${behaviorQuestions.map((q, i) => `
+                      <div class="border-l-4 border-green-400 pl-3 py-1">
+                          <div class="font-semibold">${i + 1}. ${typeof q === 'string' ? q : JSON.stringify(q)}</div>
+                      </div>
+                  `).join('')}
+                  ${behaviorQuestions.length === 0 ? '<p>No behavioral questions generated</p>' : ''}
+              </div>
+          </div>
+          
+          <div class="text-sm text-gray-500">
+              <h4 class="font-semibold">Token Usage:</h4>
+              <p>Prompt: ${tokenUsage.prompt_tokens || 'N/A'}</p>
+              <p>Completion: ${tokenUsage.completion_tokens || 'N/A'}</p>
+              <p>Total: ${tokenUsage.total_tokens || 'N/A'}</p>
+          </div>
+      </div>
+  `;
+  
+  questionsResultContainer.innerHTML = html;
+  questionsResultContainer.classList.remove('hidden');
+}
+function clearResumeResults() {
+    resumeFile.value = '';
+    resumeFilename.textContent = '';
+    resumeFilename.classList.remove('text-blue-500');
+    resumeResultContainer.classList.add('hidden');
+    matchResumeId.value = '';
+}
+
+function clearJobResults() {
+    jobFile.value = '';
+    jobFilename.textContent = '';
+    jobFilename.classList.remove('text-blue-500');
+    jobResultContainer.classList.add('hidden');
+    matchJobId.value = '';
+}
+
+function showError(container, message) {
+    const existingError = container.querySelector('.error-message');
+    if (existingError) existingError.remove();
+    
+    const errorEl = document.createElement('div');
+    errorEl.className = 'error-message bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4';
+    errorEl.innerHTML = `<p>${message}</p>`;
+    container.prepend(errorEl);
+    
+    setTimeout(() => {
+        errorEl.remove();
+    }, 5000);
+}
+
+// Make functions available globally for button clicks
+window.matchSpecificResume = matchSpecificResume;
+</script>
+{% endblock %}
