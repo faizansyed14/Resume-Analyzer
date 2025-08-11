@@ -1,30 +1,34 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Stage 1: Build stage
+FROM python:3.10-slim as builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV FLASK_ENV=production
-
-# Set work directory
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpoppler-cpp-dev \
-    python3-dev \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --user -r requirements.txt
 
-# Copy project
+# Stage 2: Runtime stage
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /root/.local /root/.local
 COPY . .
 
-# Expose the port the app runs on
+# Ensure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH
+
+# Create data directories
+RUN mkdir -p /app/data/resumes /app/data/jobs /app/data/embeddings
+
 EXPOSE 5000
 
-# Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "14400", "--workers", "4", "app:create_app('production')"]

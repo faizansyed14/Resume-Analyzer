@@ -2,935 +2,1611 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Dashboard Header -->
+  <!-- Dashboard Header -->
+  <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold mb-2">Enhanced Resume Analyzer Dashboard</h1>
+    <p class="text-blue-100">Upload and analyze resumes with advanced AI-powered parsing</p>
+    <div class="flex space-x-4 mt-4 text-sm">
+      <div class="bg-blue-700 px-3 py-1 rounded-full">
+        <i class="fas fa-bolt mr-1"></i>Batch Processing
+      </div>
+      <div class="bg-blue-700 px-3 py-1 rounded-full">
+        <i class="fas fa-brain mr-1"></i>AI-Powered
+      </div>
+      <div class="bg-blue-700 px-3 py-1 rounded-full">
+        <i class="fas fa-shield-alt mr-1"></i>Accurate Extraction
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Processed</p>
+          <p id="processed-count" class="text-2xl font-bold text-green-600">0</p>
+        </div>
+        <i class="fas fa-check-circle text-3xl text-green-500"></i>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Processing</p>
+          <p id="processing-count" class="text-2xl font-bold text-blue-600">0</p>
+        </div>
+        <i class="fas fa-cog fa-spin text-3xl text-blue-500" id="processing-spinner" style="display:none"></i>
+        <i class="fas fa-clock text-3xl text-blue-500" id="processing-icon"></i>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Failed</p>
+          <p id="failed-count" class="text-2xl font-bold text-red-600">0</p>
+        </div>
+        <i class="fas fa-exclamation-circle text-3xl text-red-500"></i>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Avg Time</p>
+          <p id="avg-time" class="text-2xl font-bold text-yellow-600">0s</p>
+        </div>
+        <i class="fas fa-stopwatch text-3xl text-yellow-500"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Sections -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Batch Resume Upload -->
     <div class="bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold text-blue-600">Resume Analyzer Dashboard</h1>
-        <p class="text-gray-600">Upload resumes and job descriptions to get matching insights</p>
+      <h2 class="text-xl font-semibold mb-4 text-blue-600 flex items-center">
+        <i class="fas fa-files mr-2"></i>Batch Resume Upload
+      </h2>
+
+      <!-- Processing Mode Selection -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Processing Mode:</label>
+        <select id="processing-mode" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="threaded">Multi-Threaded (Recommended)</option>
+          <option value="async">Async Batch</option>
+          <option value="single">Sequential</option>
+        </select>
+      </div>
+
+      <div id="resume-batch-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
+        <i class="fas fa-cloud-upload-alt text-5xl text-blue-400 mb-3"></i>
+        <p class="text-gray-600 mb-4">Drag & drop multiple resumes (PDF/DOCX) or click to browse</p>
+        <p class="text-sm text-gray-500 mb-4">Supports batch processing of 100+ resumes</p>
+        <button id="resume-batch-select-btn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+          <i class="fas fa-upload mr-2"></i>Select Multiple Files
+        </button>
+        <input type="file" id="resume-batch-file" accept=".pdf,.doc,.docx" class="hidden" multiple>
+      </div>
+
+      <!-- File List Preview -->
+      <div id="resume-file-list" class="mt-4 hidden">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h3>
+        <div id="file-list-container" class="max-h-32 overflow-y-auto bg-gray-50 rounded p-3"></div>
+      </div>
+
+      <div class="flex space-x-3 mt-4">
+        <button id="upload-batch-btn" type="button" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition disabled:bg-gray-400" disabled>
+          <i class="fas fa-rocket mr-2"></i>Start Batch Processing
+        </button>
+        <button id="clear-batch-btn" type="button" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
+          <i class="fas fa-trash mr-2"></i>Clear
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div id="batch-progress-container" class="mt-6 hidden">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Processing Progress</span>
+          <span id="progress-text">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+          <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500">
+          <span id="current-file">Ready to start...</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Upload Sections -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Resume Upload -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4 text-blue-600">
-                <i class="fas fa-file-upload mr-2"></i>Upload Resumes
-            </h2>
-            <div id="resume-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
-                <i class="fas fa-file-pdf text-5xl text-blue-400 mb-3"></i>
-                <p class="text-gray-600 mb-4">Drag & drop resumes (PDF/DOCX) or click to browse</p>
-                <button id="resume-select-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-upload mr-2"></i>Select Files
-                </button>
-                <input type="file" id="resume-file" accept=".pdf,.docx" class="hidden" multiple>
-            </div>
-            <div id="resume-filename" class="mt-2 text-sm text-gray-600"></div>
-            <div class="flex space-x-3 mt-4">
-                <button id="uploadResumeBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Resumes
-                </button>
-                <button id="clearResumeBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-trash mr-2"></i>Clear
-                </button>
-            </div>
-            <div id="resume-result-container" class="mt-6 hidden">
-                <!-- Resume results will be loaded here -->
-            </div>
-        </div>
+    <!-- Job Upload (Enhanced) -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+      <h2 class="text-xl font-semibold mb-4 text-blue-600 flex items-center">
+        <i class="fas fa-briefcase mr-2"></i>Job Description Upload
+      </h2>
+      <div id="job-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
+        <i class="fas fa-file-contract text-5xl text-blue-400 mb-3"></i>
+        <p class="text-gray-600 mb-4">Drag & drop job description (PDF/DOCX/TXT) or click to browse</p>
+        <button id="job-select-btn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+          <i class="fas fa-upload mr-2"></i>Select Job File
+        </button>
+        <input type="file" id="job-file" accept=".pdf,.doc,.docx,.txt" class="hidden">
+      </div>
+      <div id="job-filename" class="mt-2 text-sm text-gray-600"></div>
+      <div class="flex space-x-3 mt-4">
+        <button id="upload-job-btn" type="button" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
+          <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Job
+        </button>
+        <button id="clear-job-btn" type="button" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
+          <i class="fas fa-trash mr-2"></i>Clear
+        </button>
+      </div>
+    </div>
+  </div>
 
-        <!-- Job Upload -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4 text-blue-600">
-                <i class="fas fa-file-upload mr-2"></i>Upload Job Description
-            </h2>
-            <div id="job-upload" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition">
-                <i class="fas fa-file-alt text-5xl text-blue-400 mb-3"></i>
-                <p class="text-gray-600 mb-4">Drag & drop job description (PDF/DOCX) or click to browse</p>
-                <button id="job-select-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-upload mr-2"></i>Select File
-                </button>
-                <input type="file" id="job-file" accept=".pdf,.docx" class="hidden">
-            </div>
-            <div id="job-filename" class="mt-2 text-sm text-gray-600"></div>
-            <div class="flex space-x-3 mt-4">
-                <button id="uploadJobBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Job
-                </button>
-                <button id="clearJobBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-trash mr-2"></i>Clear
-                </button>
-            </div>
-            <div id="job-result-container" class="mt-6 hidden">
-                <!-- Job results will be loaded here -->
-            </div>
-        </div>
+  <!-- Results Dashboard -->
+  <div class="bg-white rounded-lg shadow-md">
+    <div class="border-b border-gray-200 p-6">
+      <h2 class="text-xl font-semibold text-blue-600 flex items-center">
+        <i class="fas fa-chart-bar mr-2"></i>Processing Results
+      </h2>
     </div>
 
-    <!-- Matching Section -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold mb-4 text-blue-600">
-            <i class="fas fa-handshake mr-2"></i>Matching & Analysis
-        </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Selection Form -->
+    <!-- Results Tabs -->
+    <div class="border-b border-gray-200">
+      <nav class="flex space-x-8 px-6" aria-label="Tabs">
+        <button id="tab-overview" class="tab-button active border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
+          <i class="fas fa-chart-pie mr-2"></i>Overview
+        </button>
+        <button id="tab-resumes" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          <i class="fas fa-users mr-2"></i>Resumes (<span id="resumes-count">0</span>)
+        </button>
+        <button id="tab-job" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          <i class="fas fa-briefcase mr-2"></i>Job Details
+        </button>
+        <button id="tab-matching" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          <i class="fas fa-handshake mr-2"></i>Matching & Analysis
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="p-6">
+      <!-- Overview Tab -->
+      <div id="content-overview" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Skills Distribution Chart -->
+          <div class="col-span-full lg:col-span-2 bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-4">Top Skills Across All Resumes</h3>
+            <canvas id="skills-chart" width="400" height="200"></canvas>
+          </div>
+
+          <!-- Processing Summary -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-4">Processing Summary</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Total Files:</span>
+                <span id="total-files-summary" class="font-semibold">0</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Successfully Parsed:</span>
+                <span id="success-files-summary" class="font-semibold text-green-600">0</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Failed:</span>
+                <span id="failed-files-summary" class="font-semibold text-red-600">0</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Success Rate:</span>
+                <span id="success-rate" class="font-semibold text-blue-600">0%</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Total Processing Time:</span>
+                <span id="total-time" class="font-semibold">0s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="mt-6">
+          <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+          <div id="activity-log" class="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
+            <p class="text-gray-500 text-center">No recent activity</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumes Tab -->
+      <div id="content-resumes" class="tab-content hidden">
+        <div class="mb-4 flex justify-between items-center">
+          <div class="flex items-center space-x-4">
+            <input type="text" id="resume-search" placeholder="Search resumes..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="export-csv-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition">
+              <i class="fas fa-download mr-2"></i>Export CSV
+            </button>
+            <button id="export-json-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
+              <i class="fas fa-code mr-2"></i>Export JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Resumes Grid -->
+        <div id="resumes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Cards injected here -->
+        </div>
+
+        <!-- Pagination (optional, not implemented here) -->
+        <div id="pagination-container" class="mt-6 flex justify-center"></div>
+      </div>
+
+      <!-- Job Details Tab -->
+      <div id="content-job" class="tab-content hidden">
+        <div id="job-details-container">
+          <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-briefcase text-4xl mb-4"></i>
+            <p>No job description uploaded yet</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matching Tab -->
+      <div id="content-matching" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Matching Controls -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">Resume & Job Matching</h3>
+
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold">Resume & Job Selection</h3>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Resume ID:</label>
-                    <input type="text" id="match-resume-id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter Resume ID">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Job ID:</label>
-                    <input type="text" id="match-job-id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter Job ID">
-                </div>
-                
-                <div class="flex space-x-3">
-                    <button id="matchSpecificBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">
-                        <i class="fas fa-link mr-2"></i>Match Specific
-                    </button>
-                    <button id="findTopResumesBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">
-                        <i class="fas fa-search mr-2"></i>Find Top Candidates
-                    </button>
-                </div>
-                
-                <button id="generateQuestionsBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition">
-                    <i class="fas fa-question-circle mr-2"></i>Generate Interview Questions
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Resume ID:</label>
+                <select id="match-resume-select" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select a resume</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Job ID:</label>
+                <input type="text" id="match-job-id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter Job ID">
+              </div>
+
+              <div class="grid grid-cols-1 gap-3">
+                <button id="match-specific-btn" type="button" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">
+                  <i class="fas fa-link mr-2"></i>Match Selected Resume
                 </button>
+                <button id="find-top-candidates-btn" type="button" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded transition">
+                  <i class="fas fa-search mr-2"></i>Find Top Candidates
+                </button>
+                <button id="batch-match-btn" type="button" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded transition">
+                  <i class="fas fa-layer-group mr-2"></i>Batch Match All
+                </button>
+                <button id="generate-questions-btn" type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition">
+                  <i class="fas fa-question-circle mr-2"></i>Generate Interview Questions
+                </button>
+              </div>
             </div>
-            
-            <!-- Results Display -->
-            <div id="match-results-container">
-                <div id="match-result-container" class="hidden">
-                    <!-- Matching results will be loaded here -->
-                </div>
-                
-                <div id="questions-result-container" class="hidden">
-                    <!-- Interview questions will be loaded here -->
-                </div>
+          </div>
+
+          <!-- Matching Results -->
+          <div id="matching-results-container">
+            <div class="text-center text-gray-500 py-8">
+              <i class="fas fa-handshake text-4xl mb-4"></i>
+              <p>Select resume and job to see matching results</p>
             </div>
+          </div>
         </div>
+      </div>
+    </div> <!-- /p-6 -->
+  </div> <!-- /card -->
+
+</div> <!-- /space-y-6 -->
+
+<!-- Enhanced Resume Details Modal -->
+<div id="resume-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+  <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center mb-4 pb-4 border-b">
+        <h3 class="text-lg font-bold text-gray-900" id="modal-title">Resume Details</h3>
+        <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div id="modal-content" class="max-h-96 overflow-y-auto"></div>
+
+      <!-- Modal Footer -->
+      <div class="flex justify-between items-center mt-6 pt-4 border-t">
+        <div class="flex space-x-2">
+          <button id="export-resume-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+            <i class="fas fa-download mr-2"></i>Export
+          </button>
+          <button id="match-resume-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">
+            <i class="fas fa-handshake mr-2"></i>Match with Job
+          </button>
+        </div>
+        <button id="close-modal-footer" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition">
+          Close
+        </button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-8 max-w-sm mx-4 text-center">
+    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2">Processing Resumes</h3>
+    <p id="loading-message" class="text-gray-600 mb-4">Please wait while we process your files...</p>
+    <div class="bg-gray-200 rounded-full h-2 mb-2">
+      <div id="loading-progress" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="loading-details" class="text-xs text-gray-500">0 of 0 files processed</p>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<style>
+@keyframes pulse-dot { 0%, 20% { color: rgba(239, 68, 68, 1); } 50% { color: rgba(239, 68, 68, 0.5); } 100% { color: rgba(239, 68, 68, 1); } }
+.processing-dot { animation: pulse-dot 1.5s infinite; }
+.fade-in { animation: fadeIn 0.5s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.tab-button.active { color: #2563eb; border-color: #2563eb; }
+.resume-card { transition: transform 0.2s, box-shadow 0.2s; }
+.resume-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+.skill-tag { transition: all 0.2s; }
+.skill-tag:hover { transform: scale(1.05); }
+
+/* Matching UI: Gauge + Bars */
+.gauge-wrap { position: relative; width: 180px; height: 180px; }
+.gauge-svg { transform: rotate(-90deg); }
+.gauge-bg { fill: none; stroke: #e5e7eb; stroke-width: 14; }
+.gauge-progress { fill: none; stroke: #3b82f6; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight: 800; font-size: 2rem; color:#1f2937;
+}
+.subtext { font-size: .8rem; color:#6b7280; margin-top:-6px; }
+
+.mini-stat { display:flex; align-items:center; gap:.5rem; }
+.mini-dot { width:10px; height:10px; border-radius:9999px; }
+.mini-bar { height:10px; background: #e5e7eb; border-radius:9999px; overflow:hidden; }
+.mini-bar-inner { height:100%; background:#3b82f6; width:0%; transition: width 900ms ease; }
+
+.token-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.35rem .55rem; border-radius:9999px; background:#f3f4f6; color:#374151; font-size:.75rem; font-weight:600; }
+.token-chip i { opacity:.7; }
+
+.badge-soft {
+  background: linear-gradient(135deg, rgba(59,130,246,.1), rgba(16,185,129,.1));
+  color:#111827; border:1px solid rgba(0,0,0,.04);
+}
+
+/* Nice card animation */
+.card-pop { animation: cardPop .5s ease; }
+@keyframes cardPop { from { opacity:0; transform: translateY(8px) scale(.98); } to { opacity:1; transform: translateY(0) scale(1); } }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// DOM Elements
-const resumeUpload = document.getElementById('resume-upload');
-const resumeFile = document.getElementById('resume-file');
-const resumeSelectBtn = document.getElementById('resume-select-btn');
-const resumeFilename = document.getElementById('resume-filename');
-const uploadResumeBtn = document.getElementById('uploadResumeBtn');
-const clearResumeBtn = document.getElementById('clearResumeBtn');
-const resumeResultContainer = document.getElementById('resume-result-container');
+document.addEventListener('DOMContentLoaded', () => {
+  const API_BASE_URL = window.API_BASE_URL || window.location.origin;
 
-const jobUpload = document.getElementById('job-upload');
-const jobFile = document.getElementById('job-file');
-const jobSelectBtn = document.getElementById('job-select-btn');
-const jobFilename = document.getElementById('job-filename');
-const uploadJobBtn = document.getElementById('uploadJobBtn');
-const clearJobBtn = document.getElementById('clearJobBtn');
-const jobResultContainer = document.getElementById('job-result-container');
-
-const matchResumeId = document.getElementById('match-resume-id');
-const matchJobId = document.getElementById('match-job-id');
-const matchSpecificBtn = document.getElementById('matchSpecificBtn');
-const findTopResumesBtn = document.getElementById('findTopResumesBtn');
-const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
-const matchResultContainer = document.getElementById('match-result-container');
-const questionsResultContainer = document.getElementById('questions-result-container');
-
-// Event Listeners
-resumeSelectBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    resumeFile.click();
-});
-
-jobSelectBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    jobFile.click();
-});
-
-// File change handlers
-resumeFile.addEventListener('change', handleResumeFileChange);
-jobFile.addEventListener('change', handleJobFileChange);
-
-// Main action buttons
-uploadResumeBtn.addEventListener('click', uploadResumes);
-clearResumeBtn.addEventListener('click', clearResumeResults);
-uploadJobBtn.addEventListener('click', uploadJob);
-clearJobBtn.addEventListener('click', clearJobResults);
-matchSpecificBtn.addEventListener('click', matchResumeToJob);
-findTopResumesBtn.addEventListener('click', findTopResumes);
-generateQuestionsBtn.addEventListener('click', generateInterviewQuestions);
-
-// Drag and drop functionality
-setupDragAndDrop(resumeUpload, resumeFile, resumeFilename);
-setupDragAndDrop(jobUpload, jobFile, jobFilename);
-
-// Functions
-function handleResumeFileChange(e) {
-    if (e.target.files.length > 0) {
-        const fileNames = Array.from(e.target.files).map(file => file.name).join(', ');
-        resumeFilename.textContent = `Selected: ${fileNames}`;
-        resumeFilename.classList.add('text-blue-500');
-    }
-}
-
-function handleJobFileChange(e) {
-    if (e.target.files.length > 0) {
-        jobFilename.textContent = `Selected: ${e.target.files[0].name}`;
-        jobFilename.classList.add('text-blue-500');
-    }
-}
-
-function setupDragAndDrop(area, fileInput, filenameDisplay) {
-    area.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        area.classList.add('border-blue-400', 'bg-blue-50');
-    });
-    
-    area.addEventListener('dragleave', () => {
-        area.classList.remove('border-blue-400', 'bg-blue-50');
-    });
-    
-    area.addEventListener('drop', (e) => {
-        e.preventDefault();
-        area.classList.remove('border-blue-400', 'bg-blue-50');
-        
-        if (e.dataTransfer.files.length > 0) {
-            const files = Array.from(e.dataTransfer.files);
-            const validFiles = files.filter(file => 
-                file.name.toLowerCase().endsWith('.pdf') || 
-                file.name.toLowerCase().endsWith('.docx')
-            );
-            
-            if (validFiles.length > 0) {
-                const dataTransfer = new DataTransfer();
-                validFiles.forEach(file => dataTransfer.items.add(file));
-                fileInput.files = dataTransfer.files;
-                
-                if (fileInput === resumeFile) {
-                    const fileNames = validFiles.map(f => f.name).join(', ');
-                    resumeFilename.textContent = `Selected: ${fileNames}`;
-                    resumeFilename.classList.add('text-blue-500');
-                } else {
-                    jobFilename.textContent = `Selected: ${validFiles[0].name}`;
-                    jobFilename.classList.add('text-blue-500');
-                }
-            } else {
-                showError(area, 'Please upload PDF or DOCX files only');
-            }
-        }
-    });
-}
-
-async function uploadResumes() {
-    if (!resumeFile.files.length) {
-        showError(resumeFilename, 'Please select at least one resume file');
-        return;
-    }
-    
-    showLoading();
-    
-    const formData = new FormData();
-    for (const file of resumeFile.files) {
-        formData.append('file', file);
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        // Display the first resume in the batch
-        if (data.results && data.results.length > 0) {
-            displayResumeDetails(data.results[0]);
-        } else {
-            throw new Error('No resumes processed');
-        }
-        
-    } catch (error) {
-        showError(resumeResultContainer, `Error: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
-}
-
-function displayResumeDetails(resumeData) {
-  // Ensure we have a valid resume ID
-  const resumeId = resumeData.resume_id || 'N/A';
-  document.getElementById('resume-id').textContent = resumeId;
-  
-  // Extract entities with fallbacks
-  const entities = resumeData.extracted_entities || {};
-  const name = typeof entities.name === 'string' ? entities.name : 'N/A';
-  const email = typeof entities.email === 'string' ? entities.email : 'N/A';
-  const phone = typeof entities.phone === 'string' ? entities.phone : 'N/A';
-  
-  // Update basic info
-  document.getElementById('resume-name').textContent = name;
-  document.getElementById('resume-email').textContent = email;
-  document.getElementById('resume-phone').textContent = phone;
-  
-  // Helper function to safely display content
-  const safeDisplay = (content, containerId, isList = false) => {
-      const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      
-      if (!content || (Array.isArray(content) && content.length === 0)) {
-          container.innerHTML = '<div class="text-gray-500">No data available</div>';
-          return;
-      }
-      
-      if (isList) {
-          if (Array.isArray(content)) {
-              content.forEach(item => {
-                  const itemEl = document.createElement('div');
-                  itemEl.className = 'py-1 border-b border-gray-100 last:border-0';
-                  itemEl.textContent = typeof item === 'string' ? item : JSON.stringify(item);
-                  container.appendChild(itemEl);
-              });
-          } else {
-              container.textContent = typeof content === 'string' ? content : JSON.stringify(content);
-          }
-      } else {
-          container.textContent = typeof content === 'string' ? content : JSON.stringify(content);
-      }
+  // Global state
+  let processedResumes = [];
+  let currentJob = null;
+  let processingStats = {
+    total: 0,
+    processed: 0,
+    failed: 0,
+    startTime: null,
+    processingTimes: []
   };
 
-  // Summary/Objective
-  safeDisplay(entities.summary_objective, 'resume-summary');
+  // DOM elements
+  const elements = {
+    // Batch upload
+    resumeBatchFile: document.getElementById('resume-batch-file'),
+    resumeBatchSelectBtn: document.getElementById('resume-batch-select-btn'),
+    resumeBatchUpload: document.getElementById('resume-batch-upload'),
+    processingMode: document.getElementById('processing-mode'),
+    uploadBatchBtn: document.getElementById('upload-batch-btn'),
+    clearBatchBtn: document.getElementById('clear-batch-btn'),
 
-  // Skills (as tags)
-  const skillsContainer = document.getElementById('resume-skills');
-  skillsContainer.innerHTML = '';
-  if (entities.skills && entities.skills.length) {
-      entities.skills.forEach(skill => {
-          if (!skill) return;
-          const skillEl = document.createElement('span');
-          skillEl.className = 'inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2';
-          skillEl.textContent = typeof skill === 'string' ? skill : 
-                               (skill.name || JSON.stringify(skill));
-          skillsContainer.appendChild(skillEl);
-      });
-  } else {
-      skillsContainer.innerHTML = '<div class="text-gray-500">No skills listed</div>';
+    // File list
+    resumeFileList: document.getElementById('resume-file-list'),
+    fileListContainer: document.getElementById('file-list-container'),
+
+    // Progress
+    batchProgressContainer: document.getElementById('batch-progress-container'),
+    progressBar: document.getElementById('progress-bar'),
+    progressText: document.getElementById('progress-text'),
+    currentFile: document.getElementById('current-file'),
+
+    // Stats
+    processedCount: document.getElementById('processed-count'),
+    processingCount: document.getElementById('processing-count'),
+    failedCount: document.getElementById('failed-count'),
+    avgTime: document.getElementById('avg-time'),
+    processingSpinner: document.getElementById('processing-spinner'),
+    processingIcon: document.getElementById('processing-icon'),
+
+    // Job upload
+    jobFile: document.getElementById('job-file'),
+    jobSelectBtn: document.getElementById('job-select-btn'),
+    jobUpload: document.getElementById('job-upload'),
+    jobFilename: document.getElementById('job-filename'),
+    uploadJobBtn: document.getElementById('upload-job-btn'),
+    clearJobBtn: document.getElementById('clear-job-btn'),
+
+    // Tabs
+    tabButtons: document.querySelectorAll('.tab-button'),
+    tabContents: document.querySelectorAll('.tab-content'),
+
+    // Results
+    resumesGrid: document.getElementById('resumes-grid'),
+    resumeSearch: document.getElementById('resume-search'),
+    resumesCount: document.getElementById('resumes-count'),
+
+    // Modal
+    resumeModal: document.getElementById('resume-modal'),
+    modalTitle: document.getElementById('modal-title'),
+    modalContent: document.getElementById('modal-content'),
+    closeModalBtn: document.getElementById('close-modal'),
+    closeModalFooter: document.getElementById('close-modal-footer'),
+
+    // Loading
+    loadingOverlay: document.getElementById('loading-overlay'),
+    loadingMessage: document.getElementById('loading-message'),
+    loadingProgress: document.getElementById('loading-progress'),
+    loadingDetails: document.getElementById('loading-details'),
+
+    // Matching
+    matchResumeSelect: document.getElementById('match-resume-select'),
+    matchJobId: document.getElementById('match-job-id'),
+    matchSpecificBtn: document.getElementById('match-specific-btn'),
+    findTopCandidatesBtn: document.getElementById('find-top-candidates-btn'),
+    batchMatchBtn: document.getElementById('batch-match-btn'),
+    generateQuestionsBtn: document.getElementById('generate-questions-btn'),
+    matchingResultsContainer: document.getElementById('matching-results-container'),
+  };
+
+  // Event Listeners Setup
+  setupEventListeners();
+  setupDragAndDrop();
+
+  function setupEventListeners() {
+    // Batch upload
+    elements.resumeBatchSelectBtn.addEventListener('click', () => elements.resumeBatchFile.click());
+    elements.resumeBatchFile.addEventListener('change', handleBatchFileSelection);
+    elements.uploadBatchBtn.addEventListener('click', startBatchProcessing);
+    elements.clearBatchBtn.addEventListener('click', clearBatchFiles);
+
+    // Job upload
+    elements.jobSelectBtn.addEventListener('click', () => elements.jobFile.click());
+    elements.jobFile.addEventListener('change', handleJobFileSelection);
+    elements.uploadJobBtn.addEventListener('click', uploadJobFile);
+    elements.clearJobBtn.addEventListener('click', clearJobFile);
+
+    // Tabs
+    elements.tabButtons.forEach(button => {
+      button.addEventListener('click', () => switchTab(button.id.replace('tab-', '')));
+    });
+
+    // Modal
+    elements.closeModalBtn.addEventListener('click', closeModal);
+    elements.closeModalFooter.addEventListener('click', closeModal);
+
+    // Search
+    if (elements.resumeSearch) elements.resumeSearch.addEventListener('input', debounce(filterResumes, 300));
+
+    // Matching
+    elements.matchSpecificBtn.addEventListener('click', matchSpecificResume);
+    elements.findTopCandidatesBtn.addEventListener('click', findTopCandidates);
+    elements.batchMatchBtn.addEventListener('click', batchMatchAll);
+    elements.generateQuestionsBtn.addEventListener('click', generateQuestions);
+
+    // Export buttons
+    document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
+    document.getElementById('export-json-btn')?.addEventListener('click', exportToJSON);
   }
 
-  // Experience (handles both array and object formats)
-  const experienceContainer = document.getElementById('resume-experience');
-  experienceContainer.innerHTML = '';
-  
-  if (entities.experience) {
-      // Normalize to array
-      const experiences = Array.isArray(entities.experience) ? 
-                        entities.experience : [entities.experience];
-      
-      experiences.forEach((exp, index) => {
-          if (!exp) return;
-          
-          const expEl = document.createElement('div');
-          expEl.className = 'mb-4 pb-4 border-b border-gray-200 last:border-0';
-          
-          let expHtml = '';
-          
-          if (typeof exp === 'string') {
-              expHtml = `<p>${exp}</p>`;
-          } else {
-              // Handle object format
-              expHtml += `<h3 class="font-semibold text-lg">${exp.title || 'Position'}</h3>`;
-              
-              if (exp.company) {
-                  expHtml += `<p class="text-blue-600">${exp.company}</p>`;
-              }
-              
-              if (exp.duration || exp.location) {
-                  expHtml += `<p class="text-sm text-gray-500">`;
-                  if (exp.duration) expHtml += `${exp.duration}`;
-                  if (exp.location) expHtml += ` ${exp.duration ? '|' : ''} ${exp.location}`;
-                  expHtml += `</p>`;
-              }
-              
-              if (exp.description) {
-                  expHtml += `<p class="mt-2">${exp.description}</p>`;
-              }
-              
-              if (exp.responsibilities && exp.responsibilities.length) {
-                  expHtml += '<ul class="list-disc pl-5 mt-2">';
-                  exp.responsibilities.forEach(resp => {
-                      expHtml += `<li>${typeof resp === 'string' ? resp : JSON.stringify(resp)}</li>`;
-                  });
-                  expHtml += '</ul>';
-              }
-          }
-          
-          expEl.innerHTML = expHtml;
-          experienceContainer.appendChild(expEl);
-      });
-  } else {
-      experienceContainer.innerHTML = '<div class="text-gray-500">No experience listed</div>';
+  function setupDragAndDrop() {
+    setupDropZone(elements.resumeBatchUpload, elements.resumeBatchFile, handleBatchFileSelection);
+    setupDropZone(elements.jobUpload, elements.jobFile, handleJobFileSelection);
   }
 
-  // Education
-  const educationContainer = document.getElementById('resume-education');
-  educationContainer.innerHTML = '';
-  
-  if (entities.education) {
-      // Normalize to array
-      const educations = Array.isArray(entities.education) ? 
-                       entities.education : [entities.education];
-      
-      educations.forEach(edu => {
-          if (!edu) return;
-          
-          const eduEl = document.createElement('div');
-          eduEl.className = 'mb-3 pb-3 border-b border-gray-100 last:border-0';
-          
-          if (typeof edu === 'string') {
-              eduEl.textContent = edu;
-          } else {
-              let eduHtml = '';
-              if (edu.degree) eduHtml += `<h3 class="font-semibold">${edu.degree}</h3>`;
-              if (edu.institution) eduHtml += `<p>${edu.institution}</p>`;
-              if (edu.field) eduHtml += `<p class="text-sm">Field: ${edu.field}</p>`;
-              if (edu.duration) eduHtml += `<p class="text-sm text-gray-500">${edu.duration}</p>`;
-              if (edu.description) eduHtml += `<p class="mt-1">${edu.description}</p>`;
-              
-              eduEl.innerHTML = eduHtml;
-          }
-          
-          educationContainer.appendChild(eduEl);
-      });
-  } else {
-      educationContainer.innerHTML = '<div class="text-gray-500">No education listed</div>';
+  function setupDropZone(dropZone, fileInput, handler) {
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-blue-400', 'bg-blue-50');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+
+      const files = Array.from(e.dataTransfer.files);
+      const validFiles = files.filter(f =>
+        f.name.toLowerCase().endsWith('.pdf') ||
+        f.name.toLowerCase().endsWith('.doc') ||
+        f.name.toLowerCase().endsWith('.docx') ||
+        f.name.toLowerCase().endsWith('.txt')
+      );
+
+      if (validFiles.length > 0) {
+        const dt = new DataTransfer();
+        validFiles.forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+        handler.call(fileInput);
+      } else {
+        showNotification('Please upload valid files (PDF, DOC/DOCX, TXT)', 'error');
+      }
+    });
   }
 
-  // Certifications
-  const certContainer = document.getElementById('resume-certifications');
-  certContainer.innerHTML = '';
-  
-  if (entities.certifications) {
-      // Normalize to array
-      const certs = Array.isArray(entities.certifications) ? 
-                   entities.certifications : [entities.certifications];
-      
-      certs.forEach(cert => {
-          if (!cert) return;
-          
-          const certEl = document.createElement('div');
-          certEl.className = 'mb-2';
-          certEl.textContent = typeof cert === 'string' ? cert : 
-                              (cert.name || JSON.stringify(cert));
-          certContainer.appendChild(certEl);
-      });
-  } else {
-      certContainer.innerHTML = '<div class="text-gray-500">No certifications listed</div>';
+  // File Selection Handlers
+  function handleBatchFileSelection() {
+    const files = Array.from(this.files);
+    if (files.length === 0) return;
+
+    updateFileList(files);
+    elements.uploadBatchBtn.disabled = false;
+
+    showNotification(`${files.length} files selected for batch processing`, 'success');
   }
 
-  // Projects
-  const projectsContainer = document.getElementById('resume-projects');
-  projectsContainer.innerHTML = '';
-  
-  if (entities.projects) {
-      // Normalize to array
-      const projects = Array.isArray(entities.projects) ? 
-                      entities.projects : [entities.projects];
-      
-      projects.forEach(proj => {
-          if (!proj) return;
-          
-          const projEl = document.createElement('div');
-          projEl.className = 'mb-4 pb-4 border-b border-gray-100 last:border-0';
-          
-          if (typeof proj === 'string') {
-              projEl.textContent = proj;
-          } else {
-              let projHtml = '';
-              if (proj.name) projHtml += `<h3 class="font-semibold">${proj.name}</h3>`;
-              if (proj.description) projHtml += `<p>${proj.description}</p>`;
-              if (proj.technologies) {
-                  projHtml += '<div class="mt-2 flex flex-wrap gap-2">';
-                  const techs = Array.isArray(proj.technologies) ? proj.technologies : [proj.technologies];
-                  techs.forEach(tech => {
-                      projHtml += `<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">${tech}</span>`;
-                  });
-                  projHtml += '</div>';
-              }
-              
-              projEl.innerHTML = projHtml;
-          }
-          
-          projectsContainer.appendChild(projEl);
-      });
-  } else {
-      projectsContainer.innerHTML = '<div class="text-gray-500">No projects listed</div>';
+  function handleJobFileSelection() {
+    const file = this.files[0];
+    if (!file) return;
+
+    elements.jobFilename.textContent = `Selected: ${file.name}`;
+    elements.jobFilename.classList.add('text-blue-500');
   }
 
-  // Token Usage
-  const tokenUsage = resumeData.llm_token_usage || {};
-  document.getElementById('resume-prompt-tokens').textContent = tokenUsage.prompt_tokens || '0';
-  document.getElementById('resume-completion-tokens').textContent = tokenUsage.completion_tokens || '0';
-  document.getElementById('resume-total-tokens').textContent = tokenUsage.total_tokens || '0';
+  function updateFileList(files) {
+    elements.resumeFileList.classList.remove('hidden');
+    elements.fileListContainer.innerHTML = '';
 
-  // Show the container
-  resumeResultContainer.style.display = 'block';
-  matchResumeId.value = resumeId;
-}
+    files.forEach((file, index) => {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'flex items-center justify-between py-1 px-2 hover:bg-gray-100 rounded';
+      fileItem.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-file-${getFileIcon(file.name)} text-blue-500 mr-2"></i>
+          <span class="text-sm">${file.name}</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+          <button data-index="${index}" class="remove-file text-red-500 hover:text-red-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+      elements.fileListContainer.appendChild(fileItem);
+    });
 
-async function uploadJob() {
-    if (!jobFile.files.length) {
-        showError(jobFilename, 'Please select a job description file');
-        return;
+    elements.fileListContainer.querySelectorAll('.remove-file').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-index'));
+        const cur = Array.from(elements.resumeBatchFile.files);
+        cur.splice(idx, 1);
+        const dt = new DataTransfer();
+        cur.forEach(f => dt.items.add(f));
+        elements.resumeBatchFile.files = dt.files;
+        if (cur.length > 0) updateFileList(cur); else clearBatchFiles();
+      });
+    });
+  }
+
+  // Batch Processing
+  async function startBatchProcessing() {
+    const files = Array.from(elements.resumeBatchFile.files);
+    if (files.length === 0) {
+      showNotification('Please select files first', 'error');
+      return;
     }
-    
-    showLoading();
-    
+
+    // Reset stats
+    processingStats = {
+      total: files.length,
+      processed: 0,
+      failed: 0,
+      startTime: Date.now(),
+      processingTimes: []
+    };
+
+    // Show progress
+    elements.batchProgressContainer.classList.remove('hidden');
+    elements.loadingOverlay.classList.remove('hidden');
+    elements.uploadBatchBtn.disabled = true;
+    elements.processingSpinner.style.display = 'inline-block';
+    elements.processingIcon.style.display = 'none';
+
+    updateStats();
+
+    try {
+      await processBatchFiles(files);
+      showNotification(`Successfully processed ${processingStats.processed} of ${processingStats.total} resumes`, 'success');
+    } catch (error) {
+      showNotification(`Batch processing failed: ${error.message}`, 'error');
+    } finally {
+      elements.loadingOverlay.classList.add('hidden');
+      elements.uploadBatchBtn.disabled = false;
+      elements.processingSpinner.style.display = 'none';
+      elements.processingIcon.style.display = 'inline-block';
+      updateStats();
+      updateUIAfterProcessing();
+    }
+  }
+
+  async function processBatchFiles(files) {
+    const mode = elements.processingMode.value;
     const formData = new FormData();
-    formData.append('file', jobFile.files[0]);
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/jobs/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        displayJobDetails(data);
-        
-    } catch (error) {
-        showError(jobResultContainer, `Error: ${error.message}`);
-    } finally {
-        hideLoading();
+    formData.append('processing_mode', mode);
+    files.forEach(file => formData.append('files', file));
+
+    const response = await fetch(`${API_BASE_URL}/resumes/batch-upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-}
 
-function displayJobDetails(jobData) {
-    const jobId = jobData.job_id;
-    const entities = jobData.extracted_entities || {};
-    
-    const html = `
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                    <h3 class="font-semibold">Job ID:</h3>
-                    <p>${jobId}</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold">Job Title:</h3>
-                    <p>${entities.job_title || 'N/A'}</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold">Company:</h3>
-                    <p>${entities.company || 'N/A'}</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold">Location:</h3>
-                    <p>${entities.location || 'N/A'}</p>
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-2">Job Summary</h3>
-                <div class="bg-gray-50 p-4 rounded">
-                    ${entities.summary_objective || 'No summary available'}
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-2">Required Skills</h3>
-                <div class="flex flex-wrap gap-2">
-                    ${entities.skills ? entities.skills.map(skill => 
-                        `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">${skill}</span>`
-                    ).join('') : 'No skills listed'}
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-2">Experience Requirements</h3>
-                ${entities.experience ? entities.experience.map(exp => `
-                    <div class="mb-4 pb-4 border-b border-gray-200">
-                        ${typeof exp === 'string' ? exp : `
-                            <h4 class="font-semibold">${exp.title || 'Experience'}</h4>
-                            <p class="text-gray-600">${exp.duration || ''}</p>
-                            <p>${exp.description || ''}</p>
-                        `}
-                    </div>
-                `).join('') : '<p>No experience requirements listed</p>'}
-            </div>
-            
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-2">Education Requirements</h3>
-                ${entities.education ? entities.education.map(edu => `
-                    <div class="mb-3">
-                        ${typeof edu === 'string' ? edu : `
-                            <p class="font-semibold">${edu.degree || ''}</p>
-                            <p class="text-gray-600">${edu.field ? 'Field: ' + edu.field : ''} ${edu.institution ? ' | ' + edu.institution : ''}</p>
-                        `}
-                    </div>
-                `).join('') : '<p>No education requirements listed</p>'}
-            </div>
-            
-            ${jobData.llm_token_usage ? `
-                <div class="text-sm text-gray-500">
-                    <h4 class="font-semibold">Token Usage:</h4>
-                    <p>Prompt: ${jobData.llm_token_usage.prompt_tokens || 0}</p>
-                    <p>Completion: ${jobData.llm_token_usage.completion_tokens || 0}</p>
-                    <p>Total: ${jobData.llm_token_usage.total_tokens || 0}</p>
-                </div>
-            ` : ''}
-        </div>
-    `;
-    
-    jobResultContainer.innerHTML = html;
-    jobResultContainer.classList.remove('hidden');
-    matchJobId.value = jobId;
-}
+    // Streaming NDJSON
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-async function findTopResumes() {
-    const jobId = matchJobId.value.trim();
-    if (!jobId) {
-        showError(matchResultContainer, 'Please enter a Job ID');
-        return;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try { handleProcessingUpdate(JSON.parse(line)); } catch (e) { console.warn('Bad update line:', line); }
+      }
     }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/jobs/match-resumes/${jobId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        displayTopResumes(data.top_resume_matches);
-        
-    } catch (error) {
-        showError(matchResultContainer, `Error: ${error.message}`);
-    } finally {
-        hideLoading();
+
+    if (buffer.trim()) {
+      try { handleProcessingUpdate(JSON.parse(buffer)); } catch (e) { console.warn('Bad final update:', buffer); }
     }
-}
-
-function displayTopResumes(topResumes) {
-    questionsResultContainer.classList.add('hidden');
-    
-    const html = `
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Top 5 Candidates</h2>
-            
-            <div class="space-y-4">
-                ${topResumes.map((resume, index) => `
-                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-semibold">${index + 1}. ${resume.candidate_name}</h3>
-                                <p class="text-sm text-gray-600">Resume ID: ${resume.resume_id}</p>
-                            </div>
-                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                ${(resume.overall_score * 100).toFixed(1)}% Match
-                            </span>
-                        </div>
-                        
-                        <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                            <div>
-                                <span class="text-gray-500">Skills:</span>
-                                <span class="font-semibold">${(resume.skills_score * 100).toFixed(1)}%</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-500">Experience:</span>
-                                <span class="font-semibold">${(resume.experience_score * 100).toFixed(1)}%</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-500">Education:</span>
-                                <span class="font-semibold">${(resume.education_score * 100).toFixed(1)}%</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-500">Domain:</span>
-                                <span class="font-semibold">${(resume.domain_alignment * 100).toFixed(1)}%</span>
-                            </div>
-                        </div>
-                        
-                        <button onclick="matchSpecificResume('${resume.resume_id}', '${matchJobId.value}')" 
-                                class="mt-3 text-blue-600 hover:text-blue-800 text-sm font-semibold">
-                            <i class="fas fa-search mr-1"></i>View Detailed Match
-                        </button>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    matchResultContainer.innerHTML = html;
-    matchResultContainer.classList.remove('hidden');
-}
-
-async function matchSpecificResume(resumeId, jobId) {
-    showLoading();
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        displayMatchDetails(data);
-        
-    } catch (error) {
-        showError(matchResultContainer, `Error: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
-}
-
-function displayMatchDetails(matchData) {
-  const details = matchData.match_details;
-  const scores = details.scores;
-  const tokenUsage = details.metadata?.llm_token_usage || {};
-  
-  const html = `
-      <div class="match-results-container">
-          <!-- Scores Section -->
-          <div class="scores-section">
-              <h3>Matching Scores</h3>
-              <div class="score-cards">
-                  <div class="score-card skills">
-                      <span class="score-label">Skills Match</span>
-                      <span class="score-value">${(scores.skills * 100).toFixed(1)}%</span>
-                      <div class="score-bar" style="width: ${scores.skills * 100}%"></div>
-                  </div>
-                  <div class="score-card experience">
-                      <span class="score-label">Experience</span>
-                      <span class="score-value">${(scores.experience * 100).toFixed(1)}%</span>
-                      <div class="score-bar" style="width: ${scores.experience * 100}%"></div>
-                  </div>
-                  <div class="score-card education">
-                      <span class="score-label">Education</span>
-                      <span class="score-value">${(scores.education * 100).toFixed(1)}%</span>
-                      <div class="score-bar" style="width: ${scores.education * 100}%"></div>
-                  </div>
-                  <div class="score-card overall">
-                      <span class="score-label">Overall Match</span>
-                      <span class="score-value">${(scores.overall * 100).toFixed(1)}%</span>
-                      <div class="score-bar" style="width: ${scores.overall * 100}%"></div>
-                  </div>
-              </div>
-          </div>
-          
-          <!-- Matched Skills -->
-          <div class="matched-skills-section">
-              <h3>Matched Skills (LLM-Identified)</h3>
-              <div class="skills-container">
-                  ${details.matched_skills.map(skill => `
-                      <div class="skill-tag">
-                          ${skill}
-                      </div>
-                  `).join('')}
-              </div>
-          </div>
-          
-          <!-- Skill Match Details -->
-          <div class="skill-details-section">
-              <h3>Detailed Skill Matching</h3>
-              <div class="skill-matches">
-                  ${details.skill_match_details.map(match => `
-                      <div class="skill-match">
-                          <div class="job-skill">Job requires: ${match.job_skill}</div>
-                          <div class="match-confidence">
-                              Confidence: ${(match.confidence * 100).toFixed(1)}% 
-                              (${match.match_type})
-                          </div>
-                      </div>
-                  `).join('')}
-              </div>
-          </div>
-          
-          <!-- Token Usage -->
-          <div class="token-usage-section">
-              <h3>LLM Token Usage</h3>
-              <div class="token-usage">
-                  <div>Prompt Tokens: ${tokenUsage.prompt_tokens || 'N/A'}</div>
-                  <div>Completion Tokens: ${tokenUsage.completion_tokens || 'N/A'}</div>
-                  <div>Total Tokens: ${tokenUsage.total_tokens || 'N/A'}</div>
-              </div>
-          </div>
-          
-          <!-- Analysis -->
-          <div class="analysis-section">
-              <h3>Analysis</h3>
-              <p>${details.match_analysis || 'No analysis available'}</p>
-          </div>
-      </div>
-  `;
-  
-  document.getElementById('match-result-container').innerHTML = html;
-  document.getElementById('match-result-container').style.display = 'block';
-}
-async function matchResumeToJob() {
-  const resumeId = matchResumeId.value.trim();
-  const jobId = matchJobId.value.trim();
-  
-  console.log("Attempting to match:", { resumeId, jobId }); // Debug
-  
-  showLoading();
-  
-  try {
-    const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
-    console.log("Raw response:", response); // Debug
-    
-    const data = await response.json();
-    console.log("Parsed data:", data); // Debug
-    
-    if (!response.ok) throw new Error(data.error || "Matching failed");
-    
-    displayMatchDetails(data);
-    
-  } catch (error) {
-    console.error("Match error:", error); // Debug
-    showError(matchResultContainer, error.message);
-  } finally {
-    hideLoading();
   }
-}
-async function generateInterviewQuestions() {
-    const resumeId = matchResumeId.value.trim();
-    const jobId = matchJobId.value.trim();
-    
-    if (!resumeId || !jobId) {
-        showError(questionsResultContainer, 'Please enter both Resume ID and Job ID');
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}/generate-interview-questions/${jobId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        displayInterviewQuestions(data);
-        
-    } catch (error) {
-        showError(questionsResultContainer, `Error: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
-}
 
-function displayInterviewQuestions(questionsData) {
-  matchResultContainer.classList.add('hidden');
-  
-  const techQuestions = questionsData.interview_questions?.technical_questions || [];
-  const behaviorQuestions = questionsData.interview_questions?.behavioral_questions || [];
-  const tokenUsage = questionsData.token_usage || {};
-  
-  const html = `
-      <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold mb-4">Interview Questions</h2>
-          
-          <div class="mb-6">
-              <h3 class="text-lg font-semibold mb-2">Technical Questions</h3>
-              <div class="space-y-3">
-                  ${techQuestions.map((q, i) => `
-                      <div class="border-l-4 border-blue-400 pl-3 py-1">
-                          <div class="font-semibold">${i + 1}. ${typeof q === 'string' ? q : JSON.stringify(q)}</div>
-                      </div>
-                  `).join('')}
-                  ${techQuestions.length === 0 ? '<p>No technical questions generated</p>' : ''}
-              </div>
-          </div>
-          
-          <div class="mb-6">
-              <h3 class="text-lg font-semibold mb-2">Behavioral Questions</h3>
-              <div class="space-y-3">
-                  ${behaviorQuestions.map((q, i) => `
-                      <div class="border-l-4 border-green-400 pl-3 py-1">
-                          <div class="font-semibold">${i + 1}. ${typeof q === 'string' ? q : JSON.stringify(q)}</div>
-                      </div>
-                  `).join('')}
-                  ${behaviorQuestions.length === 0 ? '<p>No behavioral questions generated</p>' : ''}
-              </div>
-          </div>
-          
-          <div class="text-sm text-gray-500">
-              <h4 class="font-semibold">Token Usage:</h4>
-              <p>Prompt: ${tokenUsage.prompt_tokens || 'N/A'}</p>
-              <p>Completion: ${tokenUsage.completion_tokens || 'N/A'}</p>
-              <p>Total: ${tokenUsage.total_tokens || 'N/A'}</p>
-          </div>
+  function handleProcessingUpdate(update) {
+    if (update.type === 'progress') {
+      updateProgressBar(update.current, update.total, update.current_file);
+      elements.currentFile.textContent = `Processing: ${update.current_file}`;
+      elements.loadingDetails.textContent = `${update.current} of ${update.total} files processed`;
+      const progressPercent = (update.current / update.total) * 100;
+      elements.loadingProgress.style.width = `${progressPercent}%`;
+    } else if (update.type === 'result') {
+      handleResumeResult(update.data);
+    } else if (update.type === 'error') {
+      processingStats.failed++;
+      addToActivityLog(`Failed to process ${update.filename}: ${update.error}`, 'error');
+    } else if (update.type === 'complete') {
+      processingStats.processed = update.successful ?? processingStats.processed;
+      processingStats.failed = update.failed ?? processingStats.failed;
+      addToActivityLog(`Batch processing completed. ${update.successful} successful, ${update.failed} failed.`, 'success');
+    }
+    updateStats();
+  }
+
+  function handleResumeResult(resumeData) {
+    if (resumeData && resumeData.entities) {
+      processedResumes.push(resumeData);
+      processingStats.processed++;
+      if (resumeData.processing_time) {
+        processingStats.processingTimes.push(resumeData.processing_time);
+      }
+      addToActivityLog(`Successfully processed: ${resumeData.entities.name || 'Unknown'} (ID: ${resumeData.resume_id || 'N/A'})`, 'success');
+    }
+  }
+
+  function updateProgressBar(current, total, filename = '') {
+    const percentage = (current / total) * 100;
+    elements.progressBar.style.width = `${percentage}%`;
+    elements.progressText.textContent = `${percentage.toFixed(1)}%`;
+    if (filename) elements.currentFile.textContent = `Processing: ${filename}`;
+  }
+
+  function updateStats() {
+    elements.processedCount.textContent = processingStats.processed;
+    elements.processingCount.textContent = Math.max(processingStats.total - processingStats.processed - processingStats.failed, 0);
+    elements.failedCount.textContent = processingStats.failed;
+
+    if (processingStats.processingTimes.length > 0) {
+      const avgTime = processingStats.processingTimes.reduce((s, t) => s + t, 0) / processingStats.processingTimes.length;
+      elements.avgTime.textContent = `${avgTime.toFixed(1)}s`;
+    }
+
+    document.getElementById('total-files-summary').textContent = processingStats.total;
+    document.getElementById('success-files-summary').textContent = processingStats.processed;
+    document.getElementById('failed-files-summary').textContent = processingStats.failed;
+
+    const successRate = processingStats.total > 0 ? (processingStats.processed / processingStats.total) * 100 : 0;
+    document.getElementById('success-rate').textContent = `${successRate.toFixed(1)}%`;
+
+    if (processingStats.startTime) {
+      const totalTime = (Date.now() - processingStats.startTime) / 1000;
+      document.getElementById('total-time').textContent = `${totalTime.toFixed(1)}s`;
+    }
+  }
+
+  function updateUIAfterProcessing() {
+    elements.resumesCount.textContent = processedResumes.length;
+    renderResumesGrid();
+    updateSkillsChart();
+    updateResumeSelect();
+  }
+
+  // Resume Grid Rendering
+  function renderResumesGrid(filteredResumes = null) {
+    const resumes = filteredResumes || processedResumes;
+    elements.resumesGrid.innerHTML = '';
+
+    if (resumes.length === 0) {
+      elements.resumesGrid.innerHTML = `
+        <div class="col-span-full text-center py-12 text-gray-500">
+          <i class="fas fa-users text-4xl mb-4"></i>
+          <p>No resumes processed yet</p>
+        </div>`;
+      return;
+    }
+
+    resumes.forEach((resume, index) => {
+      const card = createResumeCard(resume, index);
+      elements.resumesGrid.appendChild(card);
+    });
+  }
+
+  function createResumeCard(resume, index) {
+    const entities = resume.entities || {};
+    const skills = entities.skills || [];
+    const experience = entities.experience || [];
+
+    const card = document.createElement('div');
+    card.className = 'resume-card bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer';
+    card.onclick = () => openResumeModal(resume, index);
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start mb-4">
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">${entities.name || 'Name Not Found'}</h3>
+          <p class="text-sm text-gray-600">${entities.email || 'No email'}</p>
+          <p class="text-sm text-gray-600">${entities.phone || 'No phone'}</p>
+        </div>
+        <div class="flex space-x-2">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            entities.name ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }">
+            ${entities.name ? 'Parsed' : 'Error'}
+          </span>
+        </div>
       </div>
-  `;
-  
-  questionsResultContainer.innerHTML = html;
-  questionsResultContainer.classList.remove('hidden');
-}
-function clearResumeResults() {
-    resumeFile.value = '';
-    resumeFilename.textContent = '';
-    resumeFilename.classList.remove('text-blue-500');
-    resumeResultContainer.classList.add('hidden');
-    matchResumeId.value = '';
-}
 
-function clearJobResults() {
-    jobFile.value = '';
-    jobFilename.textContent = '';
-    jobFilename.classList.remove('text-blue-500');
-    jobResultContainer.classList.add('hidden');
-    matchJobId.value = '';
-}
+      <div class="mb-4">
+        <p class="text-sm text-gray-600 line-clamp-2">${entities.summary_objective || 'No summary available'}</p>
+      </div>
 
-function showError(container, message) {
-    const existingError = container.querySelector('.error-message');
-    if (existingError) existingError.remove();
-    
-    const errorEl = document.createElement('div');
-    errorEl.className = 'error-message bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4';
-    errorEl.innerHTML = `<p>${message}</p>`;
-    container.prepend(errorEl);
-    
-    setTimeout(() => {
-        errorEl.remove();
-    }, 5000);
-}
+      <div class="mb-4">
+        <h4 class="text-sm font-medium text-gray-700 mb-2">Top Skills (${skills.length})</h4>
+        <div class="flex flex-wrap gap-1">
+          ${skills.slice(0, 6).map(skill => `
+            <span class="skill-tag inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${skill}</span>
+          `).join('')}
+          ${skills.length > 6 ? `<span class="text-xs text-gray-500">+${skills.length - 6} more</span>` : ''}
+        </div>
+      </div>
 
-// Make functions available globally for button clicks
-window.matchSpecificResume = matchSpecificResume;
+      <div class="flex justify-between items-center text-xs text-gray-500">
+        <span>${experience.length} experience${experience.length !== 1 ? 's' : ''}</span>
+        <span>ID: ${resume.resume_id || index}</span>
+      </div>
+    `;
+    return card;
+  }
+
+  // Modal Functions
+  function openResumeModal(resume, index) {
+    const entities = resume.entities || {};
+    elements.modalTitle.textContent = entities.name || `Resume ${index + 1}`;
+    elements.modalContent.innerHTML = createResumeDetailView(resume);
+    elements.resumeModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    elements.resumeModal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
+
+  function createResumeDetailView(resume) {
+    const entities = resume.entities || {};
+    const skills = entities.skills || [];
+    const experience = entities.experience || [];
+    const education = entities.education || [];
+    const certifications = entities.certifications || [];
+    const projects = entities.projects || [];
+    const languages = entities.languages || [];
+
+    return `
+      <div class="space-y-6">
+        <!-- Contact Information -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <h4 class="font-semibold mb-3">Contact Information</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Email:</strong> ${entities.email || 'Not provided'}</div>
+            <div><strong>Phone:</strong> ${entities.phone || 'Not provided'}</div>
+            <div><strong>LinkedIn:</strong> ${entities.linkedin ? `<a href="${entities.linkedin}" target="_blank" class="text-blue-600">Profile</a>` : 'Not provided'}</div>
+            <div><strong>GitHub:</strong> ${entities.github ? `<a href="${entities.github}" target="_blank" class="text-blue-600">Profile</a>` : 'Not provided'}</div>
+          </div>
+        </div>
+
+        ${entities.summary_objective ? `
+        <div>
+          <h4 class="font-semibold mb-2">Summary</h4>
+          <p class="text-gray-700 text-sm">${entities.summary_objective}</p>
+        </div>` : ''}
+
+        <div>
+          <h4 class="font-semibold mb-2">Skills (${skills.length})</h4>
+          <div class="flex flex-wrap gap-2">
+            ${skills.map(skill => `
+              <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">${skill}</span>
+            `).join('')}
+          </div>
+        </div>
+
+        ${experience.length > 0 ? `
+        <div>
+          <h4 class="font-semibold mb-2">Experience (${experience.length})</h4>
+          <div class="space-y-4">
+            ${experience.map(exp => `
+              <div class="border-l-4 border-blue-200 pl-4">
+                <h5 class="font-medium">${exp.title || 'Position'}</h5>
+                <p class="text-sm text-gray-600">${exp.company || 'Company'}</p>
+                ${exp.location ? `<p class="text-sm text-gray-500">${exp.location}</p>` : ''}
+                ${(exp.duration || exp.start_date) ? `<p class="text-sm text-gray-500">${exp.duration || exp.start_date}${exp.end_date ? ` - ${exp.end_date}` : ''}${exp.is_current ? ' (Current)' : ''}</p>` : ''}
+                ${exp.description ? `<p class="text-sm mt-1 whitespace-pre-line">${exp.description}</p>` : ''}
+                ${exp.bullets && exp.bullets.length > 0 ? `
+                  <ul class="text-sm mt-2 space-y-1">
+                    ${exp.bullets.slice(0, 3).map(bullet => `<li class="flex items-start"><span class="text-blue-500 mr-2">•</span>${bullet}</li>`).join('')}
+                  </ul>` : ''
+                }
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${education.length > 0 ? `
+        <div>
+          <h4 class="font-semibold mb-2">Education (${education.length})</h4>
+          <div class="space-y-3">
+            ${education.map(edu => `
+              <div class="bg-gray-50 rounded p-3">
+                <h5 class="font-medium">${edu.degree || 'Degree'}</h5>
+                <p class="text-sm text-gray-600">${edu.institution || 'Institution'}</p>
+                ${edu.field ? `<p class="text-sm text-gray-500">Field: ${edu.field}</p>` : ''}
+                ${edu.duration ? `<p class="text-sm text-gray-500">${edu.duration}</p>` : ''}
+                ${edu.gpa ? `<p class="text-sm text-gray-500">GPA: ${edu.gpa}</p>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${certifications.length > 0 ? `
+        <div>
+          <h4 class="font-semibold mb-2">Certifications (${certifications.length})</h4>
+          <div class="flex flex-wrap gap-2">
+            ${certifications.map(cert => `
+              <span class="inline-block bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">${cert}</span>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${projects.length > 0 ? `
+        <div>
+          <h4 class="font-semibold mb-2">Projects (${projects.length})</h4>
+          <div class="space-y-3">
+            ${projects.map(project => `
+              <div class="border rounded p-3">
+                <h5 class="font-medium">${project.name || 'Project'}</h5>
+                ${project.description ? `<p class="text-sm text-gray-600 mt-1">${project.description}</p>` : ''}
+                ${(project.technologies && project.technologies.length > 0) ? `
+                  <div class="mt-2">
+                    <span class="text-xs font-medium text-gray-500">Technologies:</span>
+                    ${project.technologies.map(tech => `
+                      <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded ml-1">${tech}</span>
+                    `).join('')}
+                  </div>` : ''
+                }
+                ${project.url ? `<a href="${project.url}" target="_blank" class="text-blue-600 text-sm hover:underline">View Project</a>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${languages.length > 0 ? `
+        <div>
+          <h4 class="font-semibold mb-2">Languages (${languages.length})</h4>
+          <div class="flex flex-wrap gap-2">
+            ${languages.map(lang => `
+              <span class="inline-block bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">${lang}</span>
+            `).join('')}
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  // Filter Functions (search only — skill filter removed)
+  function filterResumes() {
+    const searchTerm = (elements.resumeSearch?.value || '').toLowerCase();
+
+    const filtered = processedResumes.filter(resume => {
+      const entities = resume.entities || {};
+      const matchesSearch = !searchTerm ||
+        (entities.name || '').toLowerCase().includes(searchTerm) ||
+        (entities.email || '').toLowerCase().includes(searchTerm) ||
+        (entities.summary_objective || '').toLowerCase().includes(searchTerm);
+      return matchesSearch;
+    });
+
+    renderResumesGrid(filtered);
+  }
+
+  function updateResumeSelect() {
+    elements.matchResumeSelect.innerHTML = '<option value="">Select a resume</option>';
+    processedResumes.forEach((resume, index) => {
+      const entities = resume.entities || {};
+      const option = document.createElement('option');
+      option.value = resume.resume_id || index;
+      option.textContent = `${entities.name || `Resume ${index + 1}`} (ID: ${resume.resume_id || index})`;
+      elements.matchResumeSelect.appendChild(option);
+    });
+  }
+
+  // Chart Functions
+  let skillsChartInstance = null;
+  function updateSkillsChart() {
+    const skillCounts = {};
+    processedResumes.forEach(resume => {
+      const skills = resume.entities?.skills || [];
+      skills.forEach(skill => {
+        skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+      });
+    });
+
+    const sortedSkills = Object.entries(skillCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 10);
+
+    const ctx = document.getElementById('skills-chart');
+    if (!ctx) return;
+
+    if (skillsChartInstance) {
+      skillsChartInstance.destroy();
+    }
+
+    skillsChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sortedSkills.map(([skill]) => skill),
+        datasets: [{
+          label: 'Frequency',
+          data: sortedSkills.map(([, count]) => count),
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // Tab Management
+  function switchTab(tabName) {
+    elements.tabButtons.forEach(button => {
+      button.classList.remove('active');
+      if (button.id === `tab-${tabName}`) {
+        button.classList.add('active');
+        button.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+      } else {
+        button.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+      }
+    });
+
+    elements.tabContents.forEach(content => {
+      content.classList.add('hidden');
+      if (content.id === `content-${tabName}`) {
+        content.classList.remove('hidden');
+      }
+    });
+
+    if (tabName === 'resumes' && processedResumes.length > 0) {
+      renderResumesGrid();
+    }
+  }
+
+  // Job Upload Functions
+  async function uploadJobFile() {
+    const file = elements.jobFile.files[0];
+    if (!file) {
+      showNotification('Please select a job file first', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    showLoading('Uploading and processing job description...');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const jobData = await response.json();
+      currentJob = jobData;
+
+      displayJobDetails(jobData);
+      elements.matchJobId.value = jobData.job_id || '';
+
+      showNotification('Job description uploaded successfully', 'success');
+    } catch (error) {
+      showNotification(`Job upload failed: ${error.message}`, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function displayJobDetails(jobData) {
+    const entities = jobData.extracted_entities || {};
+    const container = document.getElementById('job-details-container');
+    container.innerHTML = `
+      <div class="space-y-6">
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
+          <h3 class="text-2xl font-bold text-gray-900 mb-2">${entities.job_title || 'Job Title Not Found'}</h3>
+          <p class="text-gray-600 mb-1"><strong>Company:</strong> ${entities.company || 'Not specified'}</p>
+          <p class="text-gray-600 mb-1"><strong>Location:</strong> ${entities.location || 'Not specified'}</p>
+          <p class="text-gray-600"><strong>Job ID:</strong> ${jobData.job_id || 'Not assigned'}</p>
+        </div>
+
+        ${entities.summary_objective ? `
+        <div>
+          <h4 class="text-lg font-semibold mb-2">Job Summary</h4>
+          <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-gray-700">${entities.summary_objective}</p>
+          </div>
+        </div>` : ''}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-lg font-semibold mb-3">Required Skills</h4>
+            <div class="flex flex-wrap gap-2">
+              ${(entities.skills || []).map(skill => `
+                <span class="inline-block bg-red-100 text-red-800 text-sm px-3 py-1 rounded-full">${skill}</span>
+              `).join('') || '<p class="text-gray-500">No skills specified</p>'}
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-lg font-semibold mb-3">Experience Requirements</h4>
+            ${entities.experience_requirements && entities.experience_requirements.length > 0 ? `
+              <ul class="space-y-1">
+                ${entities.experience_requirements.map(req => `
+                  <li class="flex items-start"><span class="text-green-500 mr-2">•</span><span class="text-sm">${req}</span></li>
+                `).join('')}
+              </ul>` : '<p class="text-gray-500">No specific requirements listed</p>'}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-lg font-semibold mb-3">Education Requirements</h4>
+            ${entities.education_requirements && entities.education_requirements.length > 0 ? `
+              <ul class="space-y-1">
+                ${entities.education_requirements.map(req => `
+                  <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><span class="text-sm">${req}</span></li>
+                `).join('')}
+              </ul>` : '<p class="text-gray-500">No specific education requirements</p>'}
+          </div>
+
+          <div>
+            <h4 class="text-lg font-semibold mb-3">Certifications</h4>
+            <div class="space-y-2">
+              ${entities.certifications_required && entities.certifications_required.length > 0 ? `
+                <div>
+                  <span class="text-sm font-medium text-red-600">Required:</span>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    ${entities.certifications_required.map(cert => `
+                      <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded">${cert}</span>
+                    `).join('')}
+                  </div>
+                </div>` : ''
+              }
+              ${entities.certifications_preferred && entities.certifications_preferred.length > 0 ? `
+                <div>
+                  <span class="text-sm font-medium text-yellow-600">Preferred:</span>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    ${entities.certifications_preferred.map(cert => `
+                      <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">${cert}</span>
+                    `).join('')}
+                  </div>
+                </div>` : ''
+              }
+              ${(!entities.certifications_required || entities.certifications_required.length === 0) &&
+                 (!entities.certifications_preferred || entities.certifications_preferred.length === 0) ?
+                 '<p class="text-gray-500">No certifications specified</p>' : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Clear Functions
+  function clearBatchFiles() {
+    elements.resumeBatchFile.value = '';
+    elements.resumeFileList.classList.add('hidden');
+    elements.uploadBatchBtn.disabled = true;
+    elements.batchProgressContainer.classList.add('hidden');
+    elements.progressBar.style.width = '0%';
+    elements.progressText.textContent = '0%';
+    elements.currentFile.textContent = 'Ready to start...';
+  }
+
+  function clearJobFile() {
+    elements.jobFile.value = '';
+    elements.jobFilename.textContent = '';
+    elements.jobFilename.classList.remove('text-blue-500');
+    currentJob = null;
+    elements.matchJobId.value = '';
+    document.getElementById('job-details-container').innerHTML = `
+      <div class="text-center text-gray-500 py-8">
+        <i class="fas fa-briefcase text-4xl mb-4"></i>
+        <p>No job description uploaded yet</p>
+      </div>`;
+  }
+
+  // Matching Functions
+  async function matchSpecificResume() {
+    const resumeId = elements.matchResumeSelect.value;
+    const jobId = elements.matchJobId.value;
+
+    if (!resumeId || !jobId) {
+      showNotification('Please select both resume and job', 'error');
+      return;
+    }
+
+    showLoading('Matching resume to job...');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const matchData = await response.json();
+      displayMatchingResults(matchData);
+      switchTab('matching');
+    } catch (error) {
+      showNotification(`Matching failed: ${error.message}`, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function findTopCandidates() {
+    const jobId = elements.matchJobId.value;
+    if (!jobId) {
+      showNotification('Please enter a Job ID', 'error');
+      return;
+    }
+
+    showLoading('Finding top candidates...');
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/match-resumes/${jobId}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      displayTopCandidates(data.top_resume_matches || []);
+      switchTab('matching');
+    } catch (error) {
+      showNotification(`Finding candidates failed: ${error.message}`, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function batchMatchAll() {
+    const jobId = elements.matchJobId.value;
+    if (!jobId) {
+      showNotification('Please enter a Job ID', 'error');
+      return;
+    }
+    if (processedResumes.length === 0) {
+      showNotification('No resumes to match', 'error');
+      return;
+    }
+
+    showLoading('Matching all resumes to job...');
+    try {
+      const results = [];
+      for (const resume of processedResumes) {
+        const resumeId = resume.resume_id || processedResumes.indexOf(resume);
+        const response = await fetch(`${API_BASE_URL}/jobs/match-specific/${jobId}/${resumeId}`);
+        if (response.ok) {
+          const matchData = await response.json();
+          results.push({
+            ...matchData,
+            resume_id: resumeId,
+            candidate_name: resume.entities?.name
+          });
+        }
+      }
+
+      results.sort((a, b) => (getNested(b, ['match_details','scores','overall']) ?? 0) - (getNested(a, ['match_details','scores','overall']) ?? 0));
+      displayBatchMatchResults(results);
+      switchTab('matching');
+    } catch (error) {
+      showNotification(`Batch matching failed: ${error.message}`, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  // NEW: Beautiful Matching Results Renderer
+  function displayMatchingResults(matchData) {
+    // Be flexible with payload shape
+    const details = matchData.match_details || matchData.details || matchData;
+    const scores = details.scores || {};
+    const overall = clamp01(scores.overall ?? matchData.overall_score ?? 0);
+    const sSkills = clamp01(scores.skills ?? 0);
+    const sExp = clamp01(scores.experience ?? 0);
+    const sEdu = clamp01(scores.education ?? 0);
+
+    const matchedSkills = details.matched_skills || matchData.matched_skills || [];
+    const analysis = details.match_analysis || matchData.match_analysis || 'No analysis available';
+
+    // Token usage (support multiple shapes)
+    const usage = matchData.token_usage || details.token_usage || details.llm_usage || matchData.usage || {};
+    const promptTokens = Number(usage.prompt_tokens ?? usage.input_tokens ?? 0) || 0;
+    const completionTokens = Number(usage.completion_tokens ?? usage.output_tokens ?? 0) || 0;
+    const totalTokens = Number(usage.total_tokens ?? (promptTokens + completionTokens)) || 0;
+
+    const uid = `g${Date.now()}`;
+    const overallPct = (overall * 100);
+    const skillsPct = (sSkills * 100);
+    const expPct = (sExp * 100);
+    const eduPct = (sEdu * 100);
+
+    elements.matchingResultsContainer.innerHTML = `
+      <div class="bg-white rounded-lg shadow-md p-6 card-pop">
+        <div class="flex items-start gap-6 flex-col md:flex-row">
+          <!-- Gauge -->
+          <div class="gauge-wrap mx-auto md:mx-0">
+            <svg class="gauge-svg" width="180" height="180" viewBox="0 0 180 180">
+              <circle class="gauge-bg" cx="90" cy="90" r="74"></circle>
+              <circle class="gauge-progress" id="${uid}-progress" cx="90" cy="90" r="74" stroke-dasharray="${(2*Math.PI*74).toFixed(2)}" stroke-dashoffset="${(2*Math.PI*74).toFixed(2)}"></circle>
+            </svg>
+            <div class="gauge-center">
+              <div class="text-center">
+                <div id="${uid}-value">0%</div>
+                <div class="subtext">Overall Match</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="flex-1 w-full">
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="badge-soft inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                <i class="fas fa-briefcase mr-2"></i>Job ID: ${escapeHtml(String(matchData.job_id ?? 'N/A'))}
+              </span>
+              <span class="badge-soft inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                <i class="fas fa-id-badge mr-2"></i>Resume ID: ${escapeHtml(String(matchData.resume_id ?? 'N/A'))}
+              </span>
+            </div>
+
+            <!-- Score Bars -->
+            <div class="space-y-4">
+              ${renderScoreRow('Skills Match', skillsPct, 'fab fa-sketch')}
+              ${renderScoreRow('Experience Match', expPct, 'fas fa-user-tie')}
+              ${renderScoreRow('Education Match', eduPct, 'fas fa-graduation-cap')}
+            </div>
+
+            <!-- Analysis -->
+            <div class="mt-6">
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">Match Analysis</h4>
+              <p class="text-gray-700 text-sm bg-gray-50 rounded p-3">${escapeHtml(analysis)}</p>
+            </div>
+
+            <!-- Matched Skills -->
+            <div class="mt-6">
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">Matched Skills (${matchedSkills.length})</h4>
+              <div class="flex flex-wrap gap-1">
+                ${matchedSkills.map(s => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">${escapeHtml(s)}</span>`).join('') || '<span class="text-xs text-gray-500">None</span>'}
+              </div>
+            </div>
+
+            <!-- Token Usage -->
+            <div class="mt-6">
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">LLM Token Usage</h4>
+              <div class="flex flex-wrap gap-2">
+                <span class="token-chip"><i class="fas fa-keyboard"></i>Prompt: ${promptTokens}</span>
+                <span class="token-chip"><i class="fas fa-robot"></i>Completion: ${completionTokens}</span>
+                <span class="token-chip"><i class="fas fa-equals"></i>Total: ${totalTokens}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    // Animate gauge + bars
+    animateGauge(uid, overallPct);
+    animateBars(uid, { skillsPct, expPct, eduPct });
+  }
+
+  function renderScoreRow(label, pct, icon) {
+    const id = `${label.replace(/\s+/g,'-').toLowerCase()}-${Math.floor(Math.random()*1e6)}`;
+    return `
+      <div class="mini-stat">
+        <i class="${icon} text-blue-500"></i>
+        <div class="flex-1">
+          <div class="flex justify-between text-xs text-gray-600 mb-1">
+            <span>${label}</span><span id="${id}-val">0%</span>
+          </div>
+          <div class="mini-bar">
+            <div id="${id}-bar" class="mini-bar-inner"></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function animateGauge(uid, targetPercent) {
+    const circle = document.getElementById(`${uid}-progress`);
+    const text = document.getElementById(`${uid}-value`);
+    if (!circle || !text) return;
+
+    const r = 74;
+    const C = 2 * Math.PI * r;
+    const duration = 1000;
+    const start = performance.now();
+
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = easeOutCubic(t);
+      const current = targetPercent * eased;
+      const offset = C * (1 - current / 100);
+      circle.style.strokeDashoffset = offset;
+      text.textContent = `${current.toFixed(1)}%`;
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function animateBars(uid, { skillsPct, expPct, eduPct }) {
+    const rows = document.querySelectorAll('.mini-stat');
+    // Grab the last three rows we just rendered
+    const recent = Array.from(rows).slice(-3);
+
+    const vals = [skillsPct, expPct, eduPct];
+    recent.forEach((row, i) => {
+      const valEl = row.querySelector('[id$="-val"]');
+      const barEl = row.querySelector('[id$="-bar"]');
+      if (!valEl || !barEl) return;
+
+      const duration = 900;
+      const start = performance.now();
+      const target = vals[i];
+
+      function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = easeOutCubic(t);
+        const cur = target * eased;
+        valEl.textContent = `${cur.toFixed(1)}%`;
+        barEl.style.width = `${cur}%`;
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function clamp01(x){ return Math.max(0, Math.min(1, Number(x) || 0)); }
+
+  function displayTopCandidates(candidates) {
+    elements.matchingResultsContainer.innerHTML = `
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-4">Top Candidates</h3>
+        <div class="space-y-4">
+          ${candidates.slice(0, 5).map((candidate, index) => `
+            <div class="border rounded-lg p-4 hover:bg-gray-50">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h4 class="font-medium">${index + 1}. ${escapeHtml(candidate.candidate_name || 'Unknown')}</h4>
+                  <p class="text-sm text-gray-600">Resume ID: ${escapeHtml(String(candidate.resume_id))}</p>
+                </div>
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                  ${(((candidate.overall_score || 0) * 100)).toFixed(1)}% Match
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  function displayBatchMatchResults(results) {
+    elements.matchingResultsContainer.innerHTML = `
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-4">Batch Match Results</h3>
+        <div class="space-y-3">
+          ${results.slice(0, 10).map((result, index) => `
+            <div class="border rounded p-3 hover:bg-gray-50">
+              <div class="flex justify-between items-center">
+                <div>
+                  <span class="font-medium">${index + 1}. ${escapeHtml(result.candidate_name || 'Unknown')}</span>
+                  <span class="text-sm text-gray-500 ml-2">(ID: ${escapeHtml(String(result.resume_id))})</span>
+                </div>
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                  ${(((getNested(result, ['match_details','scores','overall']) ?? 0) * 100)).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Export Functions
+  function exportToCSV() {
+    if (processedResumes.length === 0) {
+      showNotification('No data to export', 'error');
+      return;
+    }
+    const csvContent = generateCSVContent(processedResumes);
+    downloadFile(csvContent, 'resumes_export.csv', 'text/csv');
+  }
+
+  function exportToJSON() {
+    if (processedResumes.length === 0) {
+      showNotification('No data to export', 'error');
+      return;
+    }
+    const jsonContent = JSON.stringify(processedResumes, null, 2);
+    downloadFile(jsonContent, 'resumes_export.json', 'application/json');
+  }
+
+  function generateCSVContent(resumes) {
+    const headers = ['Name', 'Email', 'Phone', 'Skills', 'Experience Count', 'Education Count', 'Summary'];
+    const rows = resumes.map(resume => {
+      const entities = resume.entities || {};
+      return [
+        entities.name || '',
+        entities.email || '',
+        entities.phone || '',
+        (entities.skills || []).join('; '),
+        (entities.experience || []).length,
+        (entities.education || []).length,
+        (entities.summary_objective || '').replaceAll('"', '""')
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    return csvContent;
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  // Utility Functions
+  function showLoading(message = 'Processing...') {
+    elements.loadingMessage.textContent = message;
+    elements.loadingOverlay.classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    elements.loadingOverlay.classList.add('hidden');
+  }
+
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white max-w-sm ${
+      type === 'success' ? 'bg-green-500' :
+      type === 'error' ? 'bg-red-500' :
+      type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+    }`;
+    notification.innerHTML = `
+      <div class="flex items-center justify-between">
+        <span>${escapeHtml(message)}</span>
+        <button class="ml-4 text-white hover:text-gray-200">&times;</button>
+      </div>`;
+    notification.querySelector('button').addEventListener('click', () => notification.remove());
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+  }
+
+  function debounce(fn, wait = 300) {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  }
+
+  function addToActivityLog(msg, type='info'){
+    const log = document.getElementById('activity-log');
+    const row = document.createElement('div');
+    row.className = `text-sm mb-1 ${type==='error'?'text-red-600':type==='success'?'text-green-700':'text-gray-700'}`;
+    row.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    if (log) {
+      if (log.firstElementChild && log.firstElementChild.classList.contains('text-center')) log.innerHTML = '';
+      log.prepend(row);
+    }
+  }
+
+  function formatFileSize(bytes){
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+    return `${(bytes/1024/1024).toFixed(1)} MB`;
+  }
+
+  function getFileIcon(name){
+    const ext = name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (ext === 'doc' || ext === 'docx') return 'word';
+    if (ext === 'txt') return 'alt';
+    return 'alt';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[m]));
+  }
+
+  function getNested(obj, pathArr) {
+    return pathArr.reduce((acc, key) => (acc && acc[key] != null ? acc[key] : undefined), obj);
+  }
+
+  function generateQuestions() {
+    showNotification('Interview question generation not implemented yet.', 'warning');
+  }
+
+}); // end DOMContentLoaded
 </script>
 {% endblock %}
